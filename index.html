@@ -894,36 +894,172 @@
 
 </main>
 
-<footer>Salvataggio automatico nel browser tramite localStorage.</footer>
+<footer><span id="syncStatus">Connessione cloud...</span></footer>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const KEY="sponsorizzazione_equestre_html_v2";
 
-let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
-  contract:{
-    sponsor:"[Ragione Sociale SRL]",
-    sponsorizzato:"[Nome e Cognome Padre]",
-    atleta:"[Nome Atleta Minorenne]",
-    cavallo:"[Nome Cavallo]",
-    importo:24000,
-    durataMesi:24,
-    dataInizio:"",
-    dataFine:"",
-    obiettivo:"Promozione del marchio tramite attività sportiva e digitale documentata."
-  },
-  posts:[],
-  gare:[],
-  spese:[],
-  receipts:[],
-  notes:""
+const firebaseConfig = {
+  apiKey: "AIzaSyDEhKc9acuRIDvGQp9pTlPfF9aJbzWbKvY",
+  authDomain: "sponsorizzazione-equestre.firebaseapp.com",
+  projectId: "sponsorizzazione-equestre",
+  storageBucket: "sponsorizzazione-equestre.firebasestorage.app",
+  messagingSenderId: "129913368934",
+  appId: "1:129913368934:web:f96d94afe7cc54ece798a7"
 };
+
+let db = null;
+let cloudDocRef = null;
+let unsubscribeCloud = null;
+let isApplyingCloudData = false;
+
+try{
+  if(!firebase.apps.length){
+    firebase.initializeApp(firebaseConfig);
+  }
+  db = firebase.firestore();
+  cloudDocRef = db.collection("sponsorizzazione").doc("dashboard");
+}catch(err){
+  console.error("Errore inizializzazione Firebase:", err);
+}
+
+function setSyncStatus(text){
+  const el=document.getElementById("syncStatus");
+  if(el) el.textContent=text;
+}
+
+function getDefaultData(){
+  return {
+    contract:{
+      sponsor:"[Ragione Sociale SRL]",
+      sponsorizzato:"[Nome e Cognome Padre]",
+      atleta:"[Nome Atleta Minorenne]",
+      cavallo:"[Nome Cavallo]",
+      importo:24000,
+      durataMesi:24,
+      dataInizio:"",
+      dataFine:"",
+      obiettivo:"Promozione del marchio tramite attività sportiva e digitale documentata."
+    },
+    posts:[],
+    gare:[],
+    spese:[],
+    receipts:[],
+    notes:""
+  };
+}
+
+function normalizeData(input){
+  const base = getDefaultData();
+  const source = input || {};
+  return {
+    contract: source.contract || base.contract,
+    posts: Array.isArray(source.posts) ? source.posts : [],
+    gare: Array.isArray(source.gare) ? source.gare : [],
+    spese: Array.isArray(source.spese) ? source.spese : [],
+    receipts: Array.isArray(source.receipts) ? source.receipts.map(r=>{
+      const copy={...r};
+      delete copy.fileData; // evita problemi con vecchi PDF salvati localmente
+      return copy;
+    }) : [],
+    notes: source.notes || ""
+  };
+}
+
+function cloudSafeData(){
+  return normalizeData(data);
+}
+
+function sameData(a,b){
+  return JSON.stringify(normalizeData(a)) === JSON.stringify(normalizeData(b));
+}
+
+async function saveCloud(){
+  if(isApplyingCloudData) return;
+
+  if(!cloudDocRef){
+    setSyncStatus("Cloud non disponibile");
+    return;
+  }
+
+  try{
+    await cloudDocRef.set(cloudSafeData(), { merge:false });
+    setSyncStatus("Cloud sincronizzato");
+  }catch(err){
+    console.error("Errore salvataggio cloud:", err);
+    setSyncStatus("Errore cloud: " + (err.code || err.message || "verifica regole Firestore"));
+  }
+}
+
+async function initCloudSync(){
+  if(!cloudDocRef){
+    setSyncStatus("Cloud non disponibile");
+    return;
+  }
+
+  try{
+    setSyncStatus("Connessione cloud...");
+
+    const snap = await cloudDocRef.get();
+
+    if(snap.exists){
+      const cloudData = normalizeData(snap.data());
+
+      if(!sameData(data, cloudData)){
+        isApplyingCloudData = true;
+        data = cloudData;
+        localStorage.setItem(KEY, JSON.stringify(data));
+        isApplyingCloudData = false;
+        render();
+      }
+    }else{
+      await cloudDocRef.set(cloudSafeData(), { merge:false });
+    }
+
+    if(unsubscribeCloud) unsubscribeCloud();
+
+    unsubscribeCloud = cloudDocRef.onSnapshot((docSnap)=>{
+      if(!docSnap.exists) return;
+
+      const cloudData = normalizeData(docSnap.data());
+
+      if(!sameData(data, cloudData)){
+        isApplyingCloudData = true;
+        data = cloudData;
+        localStorage.setItem(KEY, JSON.stringify(data));
+        isApplyingCloudData = false;
+        render();
+      }
+
+      setSyncStatus("Cloud sincronizzato");
+    }, (err)=>{
+      console.error("Errore ascolto cloud:", err);
+      setSyncStatus("Errore cloud: " + (err.code || err.message || "verifica regole Firestore"));
+    });
+
+    setSyncStatus("Cloud sincronizzato");
+  }catch(err){
+    console.error("Errore connessione cloud:", err);
+    setSyncStatus("Errore cloud: " + (err.code || err.message || "verifica regole Firestore"));
+  }
+}
+
+
+
+let data=normalizeData(JSON.parse(localStorage.getItem(KEY)||"null")||getDefaultData());
 
 if(!data.receipts) data.receipts=[];
 
 function save(){
+  data = normalizeData(data);
   localStorage.setItem(KEY,JSON.stringify(data));
   render();
+  saveCloud();
 }
 
 function euro(n){
@@ -1576,6 +1712,7 @@ function resetAll(){
 }
 
 render();
+initCloudSync();
 window.addEventListener('resize', drawChart);
 </script>
 
