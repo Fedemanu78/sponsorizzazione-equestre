@@ -472,6 +472,26 @@
       text-decoration:underline;
     }
 
+  
+    .grid-3{
+      grid-template-columns:repeat(3, minmax(220px, 1fr));
+    }
+
+    .kpi-centered{
+      max-width:920px;
+      margin:0 auto;
+      justify-content:center;
+    }
+
+    @media(max-width:850px){
+      .grid-3{
+        grid-template-columns:1fr;
+      }
+      .kpi-centered{
+        max-width:100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -488,7 +508,7 @@
 
 <main class="wrap">
 
-  <div class="grid grid-4">
+  <div class="grid grid-3 kpi-centered">
     <div class="card kpi-card">
       <div class="muted">Post pubblicati</div>
       <div class="num" id="kpiPosts">0/96</div>
@@ -500,8 +520,6 @@
       <div class="num" id="kpiGare">0/24</div>
       
     </div>
-
-    
 
     <div class="card kpi-card">
       <div class="muted">Registro spese</div>
@@ -1025,7 +1043,8 @@ function render(){
 
   document.getElementById("kpiPosts").textContent=`${k.posts}/96`;
   document.getElementById("kpiGare").textContent=`${k.gare}/24`;
-  document.getElementById("kpiViews").textContent=k.posts;
+  const kpiViews=document.getElementById("kpiViews");
+  if(kpiViews) kpiViews.textContent=k.posts;
   document.getElementById("kpiExpenses").textContent=euro(k.expenses);
   const barPosts=document.getElementById("barPosts");
   const barGare=document.getElementById("barGare");
