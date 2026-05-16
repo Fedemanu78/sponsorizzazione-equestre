@@ -828,7 +828,7 @@
 
       <div class="receipt-panel">
         <h2 style="font-size:20px;margin-bottom:12px;">Ricevute caricate</h2>
-        <p class="muted">I dati dell'app sono sincronizzati online tra dispositivi. Le ricevute PDF restano disponibili nel dispositivo che le ha caricate. L'eliminazione dei documenti fiscali è protetta da password.</p>
+        <p class="muted">Inserisci qui il link alla ricevuta/fattura PDF caricata su Google Drive, Dropbox, OneDrive o altro archivio online. Dopo aver compilato titolo, data, importo e link, clicca “Conferma ricevuta” per creare il documento cliccabile. L'eliminazione dei documenti fiscali è protetta da password.</p>
 
         <div class="grid grid-2">
           <label>Titolo spesa
@@ -843,8 +843,8 @@
             <input id="receiptAmount" type="number" step="0.01" placeholder="Es. 120.00">
           </label>
 
-          <label style="grid-column:1/-1;">Carica ricevuta PDF
-            <input id="receiptFile" type="file" accept="application/pdf">
+          <label style="grid-column:1/-1;">Link ricevuta PDF
+            <input id="receiptLink" type="url" placeholder="https://...">
           </label>
         </div>
 
@@ -871,39 +871,7 @@
 
 </main>
 
-<footer><span id="syncStatus">Cloud sincronizzato</span></footer>
-
-
-
-
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDEhKc9acuRIDvGQp9pTlPfF9aJbzWbKvY",
-  authDomain: "sponsorizzazione-equestre.firebaseapp.com",
-  projectId: "sponsorizzazione-equestre",
-  storageBucket: "sponsorizzazione-equestre.firebasestorage.app",
-  messagingSenderId: "129913368934",
-  appId: "1:129913368934:web:f96d94afe7cc54ece798a7"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.firebaseReady = true;
-window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
-window.firebaseSetDoc = setDoc;
-window.firebaseGetDoc = getDoc;
-window.firebaseOnSnapshot = onSnapshot;
-
-document.dispatchEvent(new Event("firebase-ready"));
-</script>
-
-
-
+<footer>Salvataggio automatico nel browser tramite localStorage.</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -930,73 +898,10 @@ let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
 
 if(!data.receipts) data.receipts=[];
 
-
-
-
-
-function sanitizeForCloud(obj){
-  const clean = JSON.parse(JSON.stringify(obj || {}));
-
-  if(clean.receipts){
-    clean.receipts = clean.receipts.map(r => {
-      const copy = {...r};
-
-      // rimuove dati pesanti o riferimenti storage
-      delete copy.fileData;
-      delete copy.null;
-      delete copy.null;
-
-      return copy;
-    });
-  }
-
-  return clean;
-}
-
-function normalizeCloudData(cloudData){
-  return {
-    contract: cloudData.contract || data.contract,
-    posts: cloudData.posts || [],
-    gare: cloudData.gare || [],
-    spese: cloudData.spese || [],
-    receipts: cloudData.receipts || [],
-    notes: cloudData.notes || ""
-  };
-}
-
-function setSyncStatus(message){
-  const status=document.getElementById("syncStatus");
-  if(status) status.textContent=message;
-}
-
-function firebaseErrorMessage(err){
-  if(!err) return "Errore sconosciuto";
-  return (err.code ? err.code + " - " : "") + (err.message || String(err));
-}
-
-
-
-
-async function save(){
+function save(){
   localStorage.setItem(KEY,JSON.stringify(data));
-
-  if(window.firebaseReady && window.firebaseDocRef && window.firebaseSetDoc){
-    try{
-      await window.firebaseSetDoc(window.firebaseDocRef, sanitizeForCloud(data), { merge:false });
-      setSyncStatus("Cloud sincronizzato");
-    }catch(err){
-      console.error("Errore sincronizzazione Firebase:", err);
-      setSyncStatus("Errore sync: " + firebaseErrorMessage(err));
-    }
-  }else{
-    setSyncStatus("Cloud non ancora pronto");
-  }
-
   render();
 }
-
-
-
 
 function euro(n){
   return "€ "+Number(n||0).toLocaleString("it-IT");
@@ -1262,16 +1167,16 @@ function renderGareSummary(){
 
 
 
-async function confirmReceipt(){
+function confirmReceipt(){
   const titleEl=document.getElementById("receiptTitle");
   const dateEl=document.getElementById("receiptDate");
   const amountEl=document.getElementById("receiptAmount");
-  const fileEl=document.getElementById("receiptFile");
+  const linkEl=document.getElementById("receiptLink");
 
   const title=(titleEl.value||"").trim();
   const date=dateEl.value;
   const amount=Number(amountEl.value || 0);
-  const file=fileEl.files && fileEl.files[0];
+  const link=(linkEl.value||"").trim();
 
   if(!title){
     alert("Inserisci il titolo della spesa.");
@@ -1288,52 +1193,30 @@ async function confirmReceipt(){
     return;
   }
 
-  if(!file){
-    alert("Carica una ricevuta in formato PDF.");
+  if(!link){
+    alert("Inserisci il link alla ricevuta PDF.");
     return;
   }
 
-  if(file.type !== "application/pdf"){
-    alert("Il file deve essere un PDF.");
+  if(!link.startsWith("http://") && !link.startsWith("https://")){
+    alert("Il link deve iniziare con http:// oppure https://");
     return;
   }
 
-  if(!null || !nullRef || !null || !null){
-    alert("Firebase Storage non è pronto. Riprova tra qualche secondo.");
-    return;
-  }
+  data.receipts.push({
+    id:crypto.randomUUID(),
+    title:title,
+    date:date,
+    amount:amount,
+    fileName:"Ricevuta online",
+    fileLink:link
+  });
 
-  try{
-    setSyncStatus("Caricamento ricevuta...");
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const null = "sponsorizzazione/ricevute/" + Date.now() + "_" + safeName;
-    const fileRef = nullRef(null, null);
-
-    await null(fileRef, file);
-    const null = await null(fileRef);
-
-    data.receipts.push({
-      id:crypto.randomUUID(),
-      title:title,
-      date:date,
-      amount:amount,
-      fileName:file.name,
-      null:null,
-      null:null
-    });
-
-    titleEl.value="";
-    dateEl.value="";
-    amountEl.value="";
-    fileEl.value="";
-
-    await save();
-    setSyncStatus("Ricevuta caricata e sincronizzata");
-  }catch(err){
-    console.error("Errore upload ricevuta:", err);
-    alert("Errore durante il caricamento della ricevuta: " + firebaseErrorMessage(err));
-    setSyncStatus("Errore upload: " + firebaseErrorMessage(err));
-  }
+  titleEl.value="";
+  dateEl.value="";
+  amountEl.value="";
+  linkEl.value="";
+  save();
 }
 
 function renderReceipts(){
@@ -1347,31 +1230,27 @@ function renderReceipts(){
 
   box.innerHTML=data.receipts.map(r=>`
     <div class="receipt-link">
-      <a href="${r.fileData || "#"}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
+      <a href="${r.fileLink || r.fileData || "#"}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
         ${esc(r.date)} - ${esc(r.title)} - ${euro(r.amount || 0)}
-        <div class="receipt-small">${esc(r.fileName)}</div>
+        <div class="receipt-small">${r.fileLink ? "Documento online" : esc(r.fileName)}</div>
       </a>
       <button class="danger" onclick="deleteReceipt('${r.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
     </div>
   `).join("");
 }
 
-
-
-async function deleteReceipt(id){
+function deleteReceipt(id){
   const password=prompt("Inserisci la password autorizzativa per eliminare il documento fiscale:");
-
   if(password !== "admin123"){
     alert("Password errata. Eliminazione non autorizzata.");
     return;
   }
-
   data.receipts=data.receipts.filter(r=>r.id!==id);
-  await save();
+  save();
 }
 
-function render(
-){
+
+function render(){
   const k=kpis();
 
   document.getElementById("kpiPosts").textContent=`${k.posts}/96`;
@@ -1614,7 +1493,7 @@ ${data.gare.map((g,i)=>`${i+1}. ${g.date} - ${g.name} - ${g.location} - Risultat
 ${data.spese.map((e,i)=>`${i+1}. ${e.date} - ${e.category} - ${euro(e.amount)} - Documento: ${e.document}`).join("\n")||"Nessuna spesa registrata."}
 
 4.1 RICEVUTE CARICATE
-${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
+${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - Link: ${r.fileLink || r.fileName || "Non indicato"}`).join("\n") : "Nessuna ricevuta caricata."}
 
 5. CONCLUSIONI
 Le attività risultano orientate alla promozione del marchio dello Sponsor tramite visibilità sportiva e digitale, con tracciamento operativo dei KPI e conservazione delle evidenze documentali.
@@ -1656,7 +1535,7 @@ Registro spese: ${euro(k.expenses)}
 Ricevute caricate: ${data.receipts ? data.receipts.length : 0}
 
 E. RICEVUTE CARICATE
-${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
+${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - Link: ${r.fileLink || r.fileName || "Non indicato"}`).join("\n") : "Nessuna ricevuta caricata."}
 
 F. CONCLUSIONE DIFENSIVA
 La sponsorizzazione è gestita come campagna pubblicitaria documentata, con KPI, reportistica e tracciabilità delle attività a supporto dell'inerenza economica dell'investimento.`);
@@ -1672,72 +1551,6 @@ function resetAll(){
     location.reload();
   }
 }
-
-
-
-
-let firebaseUnsubscribe = null;
-let isApplyingCloudData = false;
-
-async function initFirebaseSync(){
-  if(!window.firebaseReady || !window.firebaseDocRef || !window.firebaseGetDoc || !window.firebaseSetDoc || !window.firebaseOnSnapshot){
-    console.warn("Firebase non pronto.");
-    return;
-  }
-
-  try{
-    setSyncStatus("Cloud sincronizzato");
-
-    const snapshot = await window.firebaseGetDoc(window.firebaseDocRef);
-
-    if(snapshot.exists()){
-      const cloudData = snapshot.data();
-      if(cloudData && Object.keys(cloudData).length){
-        isApplyingCloudData = true;
-        data = normalizeCloudData(cloudData);
-        localStorage.setItem(KEY, JSON.stringify(data));
-        isApplyingCloudData = false;
-      }
-    }else{
-      await window.firebaseSetDoc(window.firebaseDocRef, sanitizeForCloud(data), { merge:false });
-    }
-
-    if(firebaseUnsubscribe) firebaseUnsubscribe();
-
-    firebaseUnsubscribe = window.firebaseOnSnapshot(window.firebaseDocRef, (snap)=>{
-      if(!snap.exists()) return;
-
-      const cloudData = snap.data();
-      const normalized = normalizeCloudData(cloudData);
-
-      const current = JSON.stringify(sanitizeForCloud(data));
-      const incoming = JSON.stringify(sanitizeForCloud(normalized));
-
-      if(current !== incoming){
-        isApplyingCloudData = true;
-        data = normalized;
-        localStorage.setItem(KEY, JSON.stringify(data));
-        isApplyingCloudData = false;
-        render();
-      }
-
-      setSyncStatus("Cloud sincronizzato");
-    }, (err)=>{
-      console.error("Errore listener Firebase:", err);
-      setSyncStatus("Errore sync: " + firebaseErrorMessage(err));
-    });
-
-    render();
-
-  }catch(err){
-    console.error("Errore Firebase:", err);
-    setSyncStatus("Errore connessione: " + firebaseErrorMessage(err));
-  }
-}
-
-document.addEventListener("firebase-ready", initFirebaseSync);
-if(window.firebaseReady) initFirebaseSync();
-
 
 render();
 window.addEventListener('resize', drawChart);
