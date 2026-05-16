@@ -431,6 +431,10 @@
       }
     }
 
+  
+    .kpi-card .num{
+      margin-bottom:4px;
+    }
   </style>
 </head>
 <body>
@@ -451,25 +455,24 @@
     <div class="card kpi-card">
       <div class="muted">Post pubblicati</div>
       <div class="num" id="kpiPosts">0/96</div>
-      <div class="progress"><div class="bar" id="barPosts"></div></div>
+      
     </div>
 
     <div class="card kpi-card">
       <div class="muted">Gare registrate</div>
       <div class="num" id="kpiGare">0/24</div>
-      <div class="progress"><div class="bar" id="barGare"></div></div>
+      
     </div>
 
     <div class="card kpi-card">
-      <div class="muted">Visualizzazioni</div>
+      <div class="muted">Post</div>
       <div class="num" id="kpiViews">0</div>
-      <span class="badge">Social</span>
     </div>
 
     <div class="card kpi-card">
       <div class="muted">Registro spese</div>
       <div class="num" id="kpiExpenses">€ 0</div>
-      <span class="badge">Conto dedicato</span>
+      
     </div>
   </div>
 
@@ -527,7 +530,7 @@
 
       <div class="receipt-panel">
         <h2 style="font-size:20px;margin-bottom:12px;">Ricevute caricate</h2>
-        <p class="muted">Carica qui le copie PDF delle ricevute/fatture. Dopo aver compilato titolo e data, clicca “Conferma ricevuta” per creare il documento cliccabile.</p>
+        <p class="muted">Carica qui le copie PDF delle ricevute/fatture. Dopo aver compilato titolo, data e importo, clicca “Conferma ricevuta” per creare il documento cliccabile. L'eliminazione dei documenti fiscali è protetta da password.</p>
 
         <div class="grid grid-2">
           <label>Titolo spesa
@@ -536,6 +539,10 @@
 
           <label>Data spesa
             <input id="receiptDate" type="date">
+          </label>
+
+          <label>Importo spesa
+            <input id="receiptAmount" type="number" step="0.01" placeholder="Es. 120.00">
           </label>
 
           <label style="grid-column:1/-1;">Carica ricevuta PDF
@@ -710,7 +717,7 @@ function kpis(){
     views:data.posts.reduce((s,p)=>s+Number(p.views||0),0),
     likes:data.posts.reduce((s,p)=>s+Number(p.likes||0),0),
     comments:data.posts.reduce((s,p)=>s+Number(p.comments||0),0),
-    expenses:data.spese.reduce((s,e)=>s+Number(e.amount||0),0)
+    expenses:data.spese.reduce((s,e)=>s+Number(e.amount||0),0) + (data.receipts||[]).reduce((s,r)=>s+Number(r.amount||0),0)
   };
 }
 
@@ -718,10 +725,12 @@ function kpis(){
 function confirmReceipt(){
   const titleEl=document.getElementById("receiptTitle");
   const dateEl=document.getElementById("receiptDate");
+  const amountEl=document.getElementById("receiptAmount");
   const fileEl=document.getElementById("receiptFile");
 
   const title=(titleEl.value||"").trim();
   const date=dateEl.value;
+  const amount=Number(amountEl.value || 0);
   const file=fileEl.files && fileEl.files[0];
 
   if(!title){
@@ -731,6 +740,11 @@ function confirmReceipt(){
 
   if(!date){
     alert("Inserisci la data della spesa.");
+    return;
+  }
+
+  if(!amount || amount <= 0){
+    alert("Inserisci l'importo della spesa.");
     return;
   }
 
@@ -750,12 +764,14 @@ function confirmReceipt(){
       id:crypto.randomUUID(),
       title:title,
       date:date,
+      amount:amount,
       fileName:file.name,
       fileData:e.target.result
     });
 
     titleEl.value="";
     dateEl.value="";
+    amountEl.value="";
     fileEl.value="";
     save();
   };
@@ -774,7 +790,7 @@ function renderReceipts(){
   box.innerHTML=data.receipts.map(r=>`
     <div class="receipt-link">
       <a href="${r.fileData}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
-        ${esc(r.date)} - ${esc(r.title)}
+        ${esc(r.date)} - ${esc(r.title)} - ${euro(r.amount || 0)}
         <div class="receipt-small">${esc(r.fileName)}</div>
       </a>
       <button class="danger" onclick="deleteReceipt('${r.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
@@ -783,6 +799,11 @@ function renderReceipts(){
 }
 
 function deleteReceipt(id){
+  const password=prompt("Inserisci la password autorizzativa per eliminare il documento fiscale:");
+  if(password !== "admin123"){
+    alert("Password errata. Eliminazione non autorizzata.");
+    return;
+  }
   data.receipts=data.receipts.filter(r=>r.id!==id);
   save();
 }
@@ -793,10 +814,12 @@ function render(){
 
   document.getElementById("kpiPosts").textContent=`${k.posts}/96`;
   document.getElementById("kpiGare").textContent=`${k.gare}/24`;
-  document.getElementById("kpiViews").textContent=k.views;
+  document.getElementById("kpiViews").textContent=k.posts;
   document.getElementById("kpiExpenses").textContent=euro(k.expenses);
-  document.getElementById("barPosts").style.width=pct(k.posts,96)+"%";
-  document.getElementById("barGare").style.width=pct(k.gare,24)+"%";
+  const barPosts=document.getElementById("barPosts");
+  const barGare=document.getElementById("barGare");
+  if(barPosts) barPosts.style.width=pct(k.posts,96)+"%";
+  if(barGare) barGare.style.width=pct(k.gare,24)+"%";
 
   renderList("posts","postList",[
     {key:"date",label:"Data",inputType:"date"},
@@ -919,7 +942,7 @@ ${data.gare.map((g,i)=>`${i+1}. ${g.date} - ${g.name} - ${g.location} - Logo: ${
 ${data.spese.map((e,i)=>`${i+1}. ${e.date} - ${e.category} - ${euro(e.amount)} - Documento: ${e.document}`).join("\n")||"Nessuna spesa registrata."}
 
 4.1 RICEVUTE CARICATE
-${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
+${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
 
 5. CONCLUSIONI
 Le attività risultano orientate alla promozione del marchio dello Sponsor tramite visibilità sportiva e digitale, con tracciamento operativo dei KPI e conservazione delle evidenze documentali.
@@ -961,7 +984,7 @@ Registro spese: ${euro(k.expenses)}
 Ricevute caricate: ${data.receipts ? data.receipts.length : 0}
 
 E. RICEVUTE CARICATE
-${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
+${data.receipts && data.receipts.length ? data.receipts.map((r,i)=>`${i+1}. ${r.date} - ${r.title} - ${euro(r.amount || 0)} - File: ${r.fileName}`).join("\n") : "Nessuna ricevuta caricata."}
 
 F. CONCLUSIONE DIFENSIVA
 La sponsorizzazione è gestita come campagna pubblicitaria documentata, con KPI, reportistica e tracciabilità delle attività a supporto dell'inerenza economica dell'investimento.`);
