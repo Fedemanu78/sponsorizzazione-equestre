@@ -905,6 +905,26 @@ function confirmGara(){
   save();
 }
 
+
+function deletePostProtected(id){
+  const password=prompt("Inserisci la password autorizzativa per eliminare il post:");
+  if(password !== "admin123"){
+    alert("Password errata. Eliminazione non autorizzata.");
+    return;
+  }
+  delItem("posts", id);
+}
+
+function deleteGaraProtected(id){
+  const password=prompt("Inserisci la password autorizzativa per eliminare la gara:");
+  if(password !== "admin123"){
+    alert("Password errata. Eliminazione non autorizzata.");
+    return;
+  }
+  delItem("gare", id);
+}
+
+
 function renderPostsSummary(){
   const box=document.getElementById("postList");
   if(!box) return;
@@ -922,7 +942,7 @@ function renderPostsSummary(){
         <div class="summary-meta">Visualizzazioni: ${Number(p.views||0)} · Like: ${Number(p.likes||0)} · Commenti: ${Number(p.comments||0)}</div>
         ${p.link ? `<a class="summary-link" href="${esc(p.link)}" target="_blank">Apri post</a>` : ""}
       </div>
-      <button class="danger" onclick="delItem('posts','${p.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
+      <button class="danger" onclick="deletePostProtected('${p.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
     </div>
   `).join("");
 }
@@ -944,7 +964,7 @@ function renderGareSummary(){
         <div class="summary-meta">Risultato: ${esc(g.result || "Non indicato")}</div>
         ${g.notes ? `<div class="summary-meta">Note: ${esc(g.notes)}</div>` : ""}
       </div>
-      <button class="danger" onclick="delItem('gare','${g.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
+      <button class="danger" onclick="deleteGaraProtected('${g.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
     </div>
   `).join("");
 }
