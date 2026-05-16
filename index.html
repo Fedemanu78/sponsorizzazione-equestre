@@ -3,73 +3,647 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Sponsorizzazione Equestre</title>
+  <title>Contratto sponsorizzazione equestre</title>
   <style>
-    :root{--bg:#f5f7fb;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--primary:#0f172a;--danger:#dc2626}
-    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-    header{padding:28px 18px;background:linear-gradient(135deg,#0f172a,#334155);color:white}
-    .wrap{max-width:1200px;margin:0 auto;padding:18px}
-    h1{margin:0;font-size:34px} h2{margin:0 0 14px}.muted{color:var(--muted)}
-    .grid{display:grid;gap:16px}.grid-4{grid-template-columns:repeat(4,1fr)}.grid-2{grid-template-columns:repeat(2,1fr)}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-    .num{font-size:30px;font-weight:800;margin-top:8px}
-    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.tab{border:1px solid var(--line);background:white;border-radius:999px;padding:10px 14px;cursor:pointer;color:var(--text)}.tab.active{background:var(--primary);color:white}
-    .section{display:none}.section.active{display:block}
-    label{font-size:13px;font-weight:700;color:#334155} input,textarea,select{width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:white;font-size:14px} textarea{min-height:90px;resize:vertical}
-    button{border:0;border-radius:14px;padding:10px 14px;background:var(--primary);color:white;cursor:pointer;font-weight:700} button.secondary{background:white;color:var(--primary);border:1px solid var(--line)} button.danger{background:var(--danger)}
-    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}.list{display:grid;gap:12px}.item{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
-    .progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:10px}.bar{height:100%;background:#0f172a}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;font-size:12px;font-weight:700}
-    canvas{width:100%;height:280px;background:white;border:1px solid var(--line);border-radius:16px} footer{padding:20px;text-align:center;color:var(--muted)}
-    @media(max-width:850px){.grid-4,.grid-2,.row{grid-template-columns:1fr}h1{font-size:26px}}
+    :root{
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#cbd5e1;
+      --primary:#2563eb;
+      --primary-dark:#1d4ed8;
+      --secondary:#0f766e;
+      --soft-blue:#dbeafe;
+      --soft-green:#ccfbf1;
+      --soft-yellow:#fef3c7;
+      --danger:#dc2626;
+      --shadow:0 10px 28px rgba(15,23,42,.08);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    header{
+      padding:34px 18px;
+      background:linear-gradient(135deg,#eff6ff,#ffffff 48%,#ecfeff);
+      border-bottom:1px solid var(--line);
+    }
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    h1{
+      margin:8px 0 0;
+      font-size:38px;
+      line-height:1.15;
+      color:#0f172a;
+    }
+
+    h2{
+      margin:0 0 14px;
+      color:#0f172a;
+    }
+
+    p{line-height:1.55}
+
+    .hero-subtitle{
+      max-width:850px;
+      color:#334155;
+      font-size:17px;
+      margin-top:12px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:7px 12px;
+      border-radius:999px;
+      background:var(--soft-blue);
+      color:#1e40af;
+      font-size:13px;
+      font-weight:800;
+      border:1px solid #bfdbfe;
+    }
+
+    .grid{display:grid;gap:16px}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    .grid-2{grid-template-columns:repeat(2,1fr)}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .kpi-card{
+      border-top:6px solid var(--primary);
+    }
+
+    .kpi-card:nth-child(2){border-top-color:var(--secondary)}
+    .kpi-card:nth-child(3){border-top-color:#7c3aed}
+    .kpi-card:nth-child(4){border-top-color:#ea580c}
+
+    .muted{color:var(--muted)}
+
+    .num{
+      font-size:32px;
+      font-weight:900;
+      margin-top:8px;
+      color:#020617;
+    }
+
+    .tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:22px 0;
+      padding:12px;
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+    }
+
+    .tab{
+      border:2px solid #bfdbfe;
+      background:#eff6ff;
+      border-radius:18px;
+      padding:13px 18px;
+      cursor:pointer;
+      color:#1e3a8a;
+      font-weight:900;
+      font-size:15px;
+      transition:.2s;
+    }
+
+    .tab:hover{
+      background:#dbeafe;
+      transform:translateY(-1px);
+    }
+
+    .tab.active{
+      background:var(--primary);
+      color:white;
+      border-color:var(--primary-dark);
+      box-shadow:0 8px 18px rgba(37,99,235,.25);
+    }
+
+    .section{display:none}
+    .section.active{display:block}
+
+    label{
+      font-size:13px;
+      font-weight:800;
+      color:#334155;
+    }
+
+    input,textarea,select{
+      width:100%;
+      margin-top:6px;
+      padding:11px 13px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:white;
+      font-size:14px;
+      color:#0f172a;
+    }
+
+    input:focus,textarea:focus{
+      outline:3px solid #bfdbfe;
+      border-color:var(--primary);
+    }
+
+    textarea{
+      min-height:92px;
+      resize:vertical;
+    }
+
+    button{
+      border:0;
+      border-radius:16px;
+      padding:12px 16px;
+      background:var(--primary);
+      color:white;
+      cursor:pointer;
+      font-weight:900;
+      font-size:14px;
+      box-shadow:0 8px 16px rgba(37,99,235,.18);
+      transition:.2s;
+    }
+
+    button:hover{
+      background:var(--primary-dark);
+      transform:translateY(-1px);
+    }
+
+    button.secondary{
+      background:white;
+      color:var(--primary-dark);
+      border:2px solid #bfdbfe;
+      box-shadow:none;
+    }
+
+    button.secondary:hover{
+      background:#eff6ff;
+    }
+
+    button.danger{
+      background:var(--danger);
+      box-shadow:0 8px 16px rgba(220,38,38,.18);
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .list{
+      display:grid;
+      gap:12px;
+    }
+
+    .item{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      background:#ffffff;
+      box-shadow:0 4px 14px rgba(15,23,42,.04);
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:16px 0;
+    }
+
+    .progress{
+      height:12px;
+      background:#e2e8f0;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+
+    .bar{
+      height:100%;
+      background:linear-gradient(90deg,var(--primary),#38bdf8);
+    }
+
+    canvas{
+      width:100%;
+      height:280px;
+      background:white;
+      border:1px solid var(--line);
+      border-radius:18px;
+    }
+
+    .contract-box{
+      background:linear-gradient(135deg,#ffffff,#eff6ff);
+      border:2px solid #bfdbfe;
+    }
+
+    .pdf-frame{
+      width:100%;
+      min-height:620px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:white;
+    }
+
+    .notice{
+      padding:14px;
+      border-radius:16px;
+      background:#fef3c7;
+      border:1px solid #fde68a;
+      color:#78350f;
+      font-weight:700;
+      margin-bottom:14px;
+    }
+
+    footer{
+      padding:22px;
+      text-align:center;
+      color:var(--muted);
+    }
+
+    @media(max-width:850px){
+      .grid-4,.grid-2,.row{grid-template-columns:1fr}
+      h1{font-size:29px}
+      .tab{width:100%}
+      .pdf-frame{min-height:480px}
+    }
   </style>
 </head>
 <body>
-<header><div class="wrap"><div class="badge">Sistema operativo sponsorizzazione</div><h1>Dashboard Sponsorizzazione Equestre</h1><p>Gestisci contratto, KPI, social, gare, spese, prove documentali, report trimestrali e dossier difensivo.</p></div></header>
+
+<header>
+  <div class="wrap">
+    <div class="badge">Sistema operativo sponsorizzazione</div>
+    <h1>Contratto sponsorizzazione equestre</h1>
+    <p class="hero-subtitle">
+      Gestione operativa della sponsorizzazione: KPI, post social, gare, spese, report trimestrali, dossier difensivo e consultazione del contratto PDF.
+    </p>
+  </div>
+</header>
+
 <main class="wrap">
+
   <div class="grid grid-4">
-    <div class="card"><div class="muted">Post pubblicati</div><div class="num" id="kpiPosts">0/96</div><div class="progress"><div class="bar" id="barPosts"></div></div></div>
-    <div class="card"><div class="muted">Gare registrate</div><div class="num" id="kpiGare">0/24</div><div class="progress"><div class="bar" id="barGare"></div></div></div>
-    <div class="card"><div class="muted">Visualizzazioni</div><div class="num" id="kpiViews">0</div><span class="badge">Social</span></div>
-    <div class="card"><div class="muted">Spese tracciate</div><div class="num" id="kpiExpenses">€ 0</div><span class="badge">Conto dedicato</span></div>
+    <div class="card kpi-card">
+      <div class="muted">Post pubblicati</div>
+      <div class="num" id="kpiPosts">0/96</div>
+      <div class="progress"><div class="bar" id="barPosts"></div></div>
+    </div>
+
+    <div class="card kpi-card">
+      <div class="muted">Gare registrate</div>
+      <div class="num" id="kpiGare">0/24</div>
+      <div class="progress"><div class="bar" id="barGare"></div></div>
+    </div>
+
+    <div class="card kpi-card">
+      <div class="muted">Visualizzazioni</div>
+      <div class="num" id="kpiViews">0</div>
+      <span class="badge">Social</span>
+    </div>
+
+    <div class="card kpi-card">
+      <div class="muted">Spese tracciate</div>
+      <div class="num" id="kpiExpenses">€ 0</div>
+      <span class="badge">Conto dedicato</span>
+    </div>
   </div>
+
   <div class="tabs">
-    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button><button class="tab" onclick="showTab('contratto',this)">Contratto</button><button class="tab" onclick="showTab('social',this)">Social</button><button class="tab" onclick="showTab('gare',this)">Gare</button><button class="tab" onclick="showTab('spese',this)">Spese</button><button class="tab" onclick="showTab('prove',this)">Prove</button><button class="tab" onclick="showTab('report',this)">Report</button>
+    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="showTab('documento',this)">Documento PDF</button>
+    <button class="tab" onclick="showTab('social',this)">Social</button>
+    <button class="tab" onclick="showTab('gare',this)">Gare</button>
+    <button class="tab" onclick="showTab('spese',this)">Spese</button>
+    <button class="tab" onclick="showTab('report',this)">Report</button>
   </div>
-  <section id="dashboard" class="section active"><div class="card"><h2>Avanzamento KPI</h2><canvas id="chart" width="900" height="300"></canvas></div></section>
-  <section id="contratto" class="section"><div class="card"><h2>Dati contratto</h2><div class="grid grid-2">
-    <label>Sponsor<input id="sponsor"></label><label>Sponsorizzato<input id="sponsorizzato"></label><label>Atleta minorenne<input id="atleta"></label><label>Cavallo<input id="cavallo"></label><label>Importo<input id="importo" type="number"></label><label>Durata mesi<input id="durataMesi" type="number"></label><label>Data inizio<input id="dataInizio" type="date"></label><label>Data fine<input id="dataFine" type="date"></label></div><label>Obiettivo marketing<textarea id="obiettivo"></textarea></label><div class="actions"><button onclick="saveContract()">Salva dati contratto</button></div></div></section>
-  <section id="social" class="section"><div class="card"><h2>Registro Social</h2><div class="actions"><button onclick="addPost()">+ Aggiungi post</button></div><div id="postList" class="list"></div></div></section>
-  <section id="gare" class="section"><div class="card"><h2>Registro Gare</h2><div class="actions"><button onclick="addGara()">+ Aggiungi gara</button></div><div id="gareList" class="list"></div></div></section>
-  <section id="spese" class="section"><div class="card"><h2>Registro Spese</h2><div class="actions"><button onclick="addSpesa()">+ Aggiungi spesa</button></div><div id="speseList" class="list"></div></div></section>
-  <section id="prove" class="section"><div class="card"><h2>Archivio Prove</h2><div class="actions"><button onclick="addProva()">+ Aggiungi prova</button></div><div id="proveList" class="list"></div></div></section>
-  <section id="report" class="section"><div class="card"><h2>Generazione documenti</h2><p class="muted">Genera file TXT strutturati, copiabili in Word o allegabili al dossier.</p><div class="actions"><button onclick="generateReport()">Genera report trimestrale</button><button class="secondary" onclick="generateDossier()">Genera dossier difensivo</button><button class="secondary" onclick="exportJSON()">Esporta backup JSON</button><button class="danger" onclick="resetAll()">Reset dati</button></div><label>Note interne<textarea id="notes" onchange="saveNotes()"></textarea></label></div></section>
-</main><footer>Salvataggio automatico nel browser tramite localStorage.</footer>
+
+  <section id="dashboard" class="section active">
+    <div class="card">
+      <h2>Avanzamento KPI</h2>
+      <canvas id="chart" width="900" height="300"></canvas>
+    </div>
+  </section>
+
+  <section id="documento" class="section">
+    <div class="card contract-box">
+      <h2>Contratto PDF</h2>
+      <div class="notice">
+        Per visualizzare il contratto in questa sezione, carica su GitHub il file PDF rinominato esattamente <strong>contratto.pdf</strong>, nella stessa cartella di <strong>index.html</strong>.
+      </div>
+      <div class="actions">
+        <button onclick="window.open('contratto.pdf','_blank')">Apri contratto PDF</button>
+        <button class="secondary" onclick="downloadContract()">Scarica contratto PDF</button>
+      </div>
+      <iframe class="pdf-frame" src="contratto.pdf"></iframe>
+    </div>
+  </section>
+
+  <section id="social" class="section">
+    <div class="card">
+      <h2>Registro Social</h2>
+      <div class="actions"><button onclick="addPost()">+ Aggiungi post</button></div>
+      <div id="postList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="gare" class="section">
+    <div class="card">
+      <h2>Registro Gare</h2>
+      <div class="actions"><button onclick="addGara()">+ Aggiungi gara</button></div>
+      <div id="gareList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="spese" class="section">
+    <div class="card">
+      <h2>Registro Spese</h2>
+      <div class="actions"><button onclick="addSpesa()">+ Aggiungi spesa</button></div>
+      <div id="speseList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="report" class="section">
+    <div class="card">
+      <h2>Generazione documenti</h2>
+      <p class="muted">Genera file TXT strutturati, copiabili in Word o allegabili al dossier.</p>
+      <div class="actions">
+        <button onclick="generateReport()">Genera report trimestrale</button>
+        <button class="secondary" onclick="generateDossier()">Genera dossier difensivo</button>
+        <button class="secondary" onclick="exportJSON()">Esporta backup JSON</button>
+        <button class="danger" onclick="resetAll()">Reset dati</button>
+      </div>
+      <label>Note interne<textarea id="notes" onchange="saveNotes()"></textarea></label>
+    </div>
+  </section>
+
+</main>
+
+<footer>Salvataggio automatico nel browser tramite localStorage.</footer>
+
 <script>
-const KEY="sponsorizzazione_equestre_html_v1";
-let data=JSON.parse(localStorage.getItem(KEY)||"null")||{contract:{sponsor:"[Ragione Sociale SRL]",sponsorizzato:"[Nome e Cognome Padre]",atleta:"[Nome Atleta Minorenne]",cavallo:"[Nome Cavallo]",importo:24000,durataMesi:24,dataInizio:"",dataFine:"",obiettivo:"Promozione del marchio tramite attività sportiva e digitale documentata."},posts:[],gare:[],spese:[],prove:[],notes:""};
-function save(){localStorage.setItem(KEY,JSON.stringify(data));render()} function euro(n){return "€ "+Number(n||0).toLocaleString("it-IT")} function pct(v,t){return Math.min(100,Math.round((Number(v)||0)/(Number(t)||1)*100))}
-function showTab(id,el){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));el.classList.add("active");if(id==="dashboard")setTimeout(drawChart,100)}
-function loadContract(){for(const k in data.contract){const el=document.getElementById(k);if(el)el.value=data.contract[k]}document.getElementById("notes").value=data.notes||""}
-function saveContract(){["sponsor","sponsorizzato","atleta","cavallo","importo","durataMesi","dataInizio","dataFine","obiettivo"].forEach(k=>data.contract[k]=document.getElementById(k).value);save()}
-function saveNotes(){data.notes=document.getElementById("notes").value;save()}
-function esc(s){return String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
-function addPost(){data.posts.push({id:crypto.randomUUID(),date:"",platform:"Instagram",description:"",logo:"Sì",link:"",views:0,likes:0,comments:0});save()}
-function addGara(){data.gare.push({id:crypto.randomUUID(),date:"",name:"",location:"",logo:"Sì",result:"",notes:""});save()}
-function addSpesa(){data.spese.push({id:crypto.randomUUID(),date:"",category:"Pensione cavallo",amount:0,document:"",notes:""});save()}
-function addProva(){data.prove.push({id:crypto.randomUUID(),date:"",type:"Foto gara",description:"",reference:""});save()}
-function updateItem(type,id,key,value){data[type]=data[type].map(x=>x.id===id?{...x,[key]:value}:x);save()} function delItem(type,id){data[type]=data[type].filter(x=>x.id!==id);save()}
-function input(type,id,key,label,value,inputType="text"){return `<label>${label}<input type="${inputType}" value="${esc(value)}" onchange="updateItem('${type}','${id}','${key}',this.value)"></label>`}
-function area(type,id,key,label,value){return `<label style="grid-column:1/-1">${label}<textarea onchange="updateItem('${type}','${id}','${key}',this.value)">${esc(value)}</textarea></label>`}
-function renderList(type,container,fields){const box=document.getElementById(container);if(!data[type].length){box.innerHTML='<div class="muted">Nessun elemento registrato.</div>';return}box.innerHTML=data[type].map(item=>`<div class="item"><div class="row">${fields.map(f=>f.area?area(type,item.id,f.key,f.label,item[f.key]):input(type,item.id,f.key,f.label,item[f.key],f.inputType||"text")).join("")}</div><button class="danger" onclick="delItem('${type}','${item.id}')">Elimina</button></div>`).join("")}
-function kpis(){return{posts:data.posts.length,gare:data.gare.length,views:data.posts.reduce((s,p)=>s+Number(p.views||0),0),likes:data.posts.reduce((s,p)=>s+Number(p.likes||0),0),comments:data.posts.reduce((s,p)=>s+Number(p.comments||0),0),expenses:data.spese.reduce((s,e)=>s+Number(e.amount||0),0),prove:data.prove.length}}
-function render(){const k=kpis();document.getElementById("kpiPosts").textContent=`${k.posts}/96`;document.getElementById("kpiGare").textContent=`${k.gare}/24`;document.getElementById("kpiViews").textContent=k.views;document.getElementById("kpiExpenses").textContent=euro(k.expenses);document.getElementById("barPosts").style.width=pct(k.posts,96)+"%";document.getElementById("barGare").style.width=pct(k.gare,24)+"%";
-renderList("posts","postList",[{key:"date",label:"Data",inputType:"date"},{key:"platform",label:"Piattaforma"},{key:"logo",label:"Logo visibile"},{key:"link",label:"Link"},{key:"views",label:"Visualizzazioni",inputType:"number"},{key:"likes",label:"Like",inputType:"number"},{key:"comments",label:"Commenti",inputType:"number"},{key:"description",label:"Descrizione",area:true}]);
-renderList("gare","gareList",[{key:"date",label:"Data",inputType:"date"},{key:"name",label:"Nome gara"},{key:"location",label:"Luogo"},{key:"logo",label:"Logo visibile"},{key:"result",label:"Risultato"},{key:"notes",label:"Note"}]);
-renderList("spese","speseList",[{key:"date",label:"Data",inputType:"date"},{key:"category",label:"Categoria"},{key:"amount",label:"Importo",inputType:"number"},{key:"document",label:"Fattura/ricevuta"},{key:"notes",label:"Note",area:true}]);
-renderList("prove","proveList",[{key:"date",label:"Data",inputType:"date"},{key:"type",label:"Tipo prova"},{key:"reference",label:"Riferimento/link/nome file"},{key:"description",label:"Descrizione",area:true}]);drawChart()}
-function drawChart(){const c=document.getElementById("chart");if(!c)return;const ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);const k=kpis();const vals=[{label:"Post",value:k.posts,target:96},{label:"Gare",value:k.gare,target:24},{label:"Prove",value:k.prove,target:24}];const w=160,gap=80,base=250;ctx.font="16px Arial";vals.forEach((v,i)=>{const x=80+i*(w+gap);const h=Math.min(220,(pct(v.value,v.target)/100)*220);ctx.fillStyle="#e2e8f0";ctx.fillRect(x,30,w,220);ctx.fillStyle="#0f172a";ctx.fillRect(x,base-h,w,h);ctx.fillStyle="#0f172a";ctx.fillText(v.label,x,280);ctx.fillText(`${v.value}/${v.target}`,x,24)})}
-function download(filename,text){const blob=new Blob([text],{type:"text/plain;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
-function generateReport(){const c=data.contract,k=kpis();download("Report_Trimestrale_Sponsorizzazione.txt",`REPORT TRIMESTRALE SPONSORIZZAZIONE SPORTIVA
+const KEY="sponsorizzazione_equestre_html_v2";
+
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
+  contract:{
+    sponsor:"[Ragione Sociale SRL]",
+    sponsorizzato:"[Nome e Cognome Padre]",
+    atleta:"[Nome Atleta Minorenne]",
+    cavallo:"[Nome Cavallo]",
+    importo:24000,
+    durataMesi:24,
+    dataInizio:"",
+    dataFine:"",
+    obiettivo:"Promozione del marchio tramite attività sportiva e digitale documentata."
+  },
+  posts:[],
+  gare:[],
+  spese:[],
+  notes:""
+};
+
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(data));
+  render();
+}
+
+function euro(n){
+  return "€ "+Number(n||0).toLocaleString("it-IT");
+}
+
+function pct(v,t){
+  return Math.min(100,Math.round((Number(v)||0)/(Number(t)||1)*100));
+}
+
+function showTab(id,el){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  if(id==="dashboard")setTimeout(drawChart,100);
+}
+
+function saveNotes(){
+  data.notes=document.getElementById("notes").value;
+  save();
+}
+
+function esc(s){
+  return String(s??"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+function addPost(){
+  data.posts.push({
+    id:crypto.randomUUID(),
+    date:"",
+    platform:"Instagram",
+    description:"",
+    logo:"Sì",
+    link:"",
+    views:0,
+    likes:0,
+    comments:0
+  });
+  save();
+}
+
+function addGara(){
+  data.gare.push({
+    id:crypto.randomUUID(),
+    date:"",
+    name:"",
+    location:"",
+    logo:"Sì",
+    result:"",
+    notes:""
+  });
+  save();
+}
+
+function addSpesa(){
+  data.spese.push({
+    id:crypto.randomUUID(),
+    date:"",
+    category:"Pensione cavallo",
+    amount:0,
+    document:"",
+    notes:""
+  });
+  save();
+}
+
+function updateItem(type,id,key,value){
+  data[type]=data[type].map(x=>x.id===id?{...x,[key]:value}:x);
+  save();
+}
+
+function delItem(type,id){
+  data[type]=data[type].filter(x=>x.id!==id);
+  save();
+}
+
+function input(type,id,key,label,value,inputType="text"){
+  return `<label>${label}<input type="${inputType}" value="${esc(value)}" onchange="updateItem('${type}','${id}','${key}',this.value)"></label>`;
+}
+
+function area(type,id,key,label,value){
+  return `<label style="grid-column:1/-1">${label}<textarea onchange="updateItem('${type}','${id}','${key}',this.value)">${esc(value)}</textarea></label>`;
+}
+
+function renderList(type,container,fields){
+  const box=document.getElementById(container);
+  if(!data[type].length){
+    box.innerHTML='<div class="muted">Nessun elemento registrato.</div>';
+    return;
+  }
+
+  box.innerHTML=data[type].map(item=>`
+    <div class="item">
+      <div class="row">
+        ${fields.map(f=>f.area?area(type,item.id,f.key,f.label,item[f.key]):input(type,item.id,f.key,f.label,item[f.key],f.inputType||"text")).join("")}
+      </div>
+      <button class="danger" onclick="delItem('${type}','${item.id}')">Elimina</button>
+    </div>
+  `).join("");
+}
+
+function kpis(){
+  return{
+    posts:data.posts.length,
+    gare:data.gare.length,
+    views:data.posts.reduce((s,p)=>s+Number(p.views||0),0),
+    likes:data.posts.reduce((s,p)=>s+Number(p.likes||0),0),
+    comments:data.posts.reduce((s,p)=>s+Number(p.comments||0),0),
+    expenses:data.spese.reduce((s,e)=>s+Number(e.amount||0),0)
+  };
+}
+
+function render(){
+  const k=kpis();
+
+  document.getElementById("kpiPosts").textContent=`${k.posts}/96`;
+  document.getElementById("kpiGare").textContent=`${k.gare}/24`;
+  document.getElementById("kpiViews").textContent=k.views;
+  document.getElementById("kpiExpenses").textContent=euro(k.expenses);
+  document.getElementById("barPosts").style.width=pct(k.posts,96)+"%";
+  document.getElementById("barGare").style.width=pct(k.gare,24)+"%";
+
+  renderList("posts","postList",[
+    {key:"date",label:"Data",inputType:"date"},
+    {key:"platform",label:"Piattaforma"},
+    {key:"logo",label:"Logo visibile"},
+    {key:"link",label:"Link"},
+    {key:"views",label:"Visualizzazioni",inputType:"number"},
+    {key:"likes",label:"Like",inputType:"number"},
+    {key:"comments",label:"Commenti",inputType:"number"},
+    {key:"description",label:"Descrizione",area:true}
+  ]);
+
+  renderList("gare","gareList",[
+    {key:"date",label:"Data",inputType:"date"},
+    {key:"name",label:"Nome gara"},
+    {key:"location",label:"Luogo"},
+    {key:"logo",label:"Logo visibile"},
+    {key:"result",label:"Risultato"},
+    {key:"notes",label:"Note"}
+  ]);
+
+  renderList("spese","speseList",[
+    {key:"date",label:"Data",inputType:"date"},
+    {key:"category",label:"Categoria"},
+    {key:"amount",label:"Importo",inputType:"number"},
+    {key:"document",label:"Fattura/ricevuta"},
+    {key:"notes",label:"Note",area:true}
+  ]);
+
+  const notes=document.getElementById("notes");
+  if(notes && notes.value!==data.notes) notes.value=data.notes||"";
+
+  drawChart();
+}
+
+function drawChart(){
+  const c=document.getElementById("chart");
+  if(!c)return;
+
+  const ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  const k=kpis();
+  const vals=[
+    {label:"Post",value:k.posts,target:96,color:"#2563eb"},
+    {label:"Gare",value:k.gare,target:24,color:"#0f766e"},
+    {label:"Spese",value:Math.min(k.expenses,24000),target:24000,color:"#ea580c"}
+  ];
+
+  const w=160,gap=80,base=250;
+  ctx.font="16px Arial";
+
+  vals.forEach((v,i)=>{
+    const x=80+i*(w+gap);
+    const h=Math.min(220,(pct(v.value,v.target)/100)*220);
+
+    ctx.fillStyle="#e2e8f0";
+    ctx.fillRect(x,30,w,220);
+
+    ctx.fillStyle=v.color;
+    ctx.fillRect(x,base-h,w,h);
+
+    ctx.fillStyle="#0f172a";
+    ctx.fillText(v.label,x,280);
+
+    if(v.label==="Spese"){
+      ctx.fillText(euro(v.value),x,24);
+    }else{
+      ctx.fillText(`${v.value}/${v.target}`,x,24);
+    }
+  });
+}
+
+function download(filename,text){
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadContract(){
+  const a=document.createElement("a");
+  a.href="contratto.pdf";
+  a.download="contratto.pdf";
+  a.click();
+}
+
+function generateReport(){
+  const c=data.contract,k=kpis();
+
+  download("Report_Trimestrale_Sponsorizzazione.txt",`REPORT TRIMESTRALE SPONSORIZZAZIONE SPORTIVA
 
 Sponsor: ${c.sponsor}
 Sponsorizzato: ${c.sponsorizzato}
@@ -85,7 +659,6 @@ Visualizzazioni totali: ${k.views}
 Like totali: ${k.likes}
 Commenti totali: ${k.comments}
 Spese tracciate: ${euro(k.expenses)}
-Prove archiviate: ${k.prove}
 
 2. ATTIVITÀ SOCIAL
 ${data.posts.map((p,i)=>`${i+1}. ${p.date} - ${p.platform} - ${p.description} - Logo: ${p.logo} - Link: ${p.link}`).join("\n")||"Nessun post registrato."}
@@ -96,15 +669,17 @@ ${data.gare.map((g,i)=>`${i+1}. ${g.date} - ${g.name} - ${g.location} - Logo: ${
 4. SPESE TRACCIATE
 ${data.spese.map((e,i)=>`${i+1}. ${e.date} - ${e.category} - ${euro(e.amount)} - Documento: ${e.document}`).join("\n")||"Nessuna spesa registrata."}
 
-5. PROVE DOCUMENTALI
-${data.prove.map((e,i)=>`${i+1}. ${e.date} - ${e.type}: ${e.description} (${e.reference})`).join("\n")||"Nessuna prova archiviata."}
-
-6. CONCLUSIONI
+5. CONCLUSIONI
 Le attività risultano orientate alla promozione del marchio dello Sponsor tramite visibilità sportiva e digitale, con tracciamento operativo dei KPI e conservazione delle evidenze documentali.
 
 NOTE
-${data.notes||""}`)}
-function generateDossier(){const c=data.contract,k=kpis();download("Dossier_Difensivo_Sponsorizzazione.txt",`DOSSIER DIFENSIVO SPONSORIZZAZIONE SPORTIVA
+${data.notes||""}`);
+}
+
+function generateDossier(){
+  const c=data.contract,k=kpis();
+
+  download("Dossier_Difensivo_Sponsorizzazione.txt",`DOSSIER DIFENSIVO SPONSORIZZAZIONE SPORTIVA
 
 A. DATI CONTRATTUALI
 Sponsor: ${c.sponsor}
@@ -122,7 +697,7 @@ C. KPI CONTRATTUALI
 - Almeno 96 post complessivi
 - Almeno 24 gare ufficiali
 - Logo visibile nei contenuti e negli eventi
-- Reportistica periodica e prove documentali
+- Reportistica periodica
 
 D. RISULTATI REGISTRATI
 Post: ${k.posts}/96
@@ -131,14 +706,24 @@ Visualizzazioni: ${k.views}
 Like: ${k.likes}
 Commenti: ${k.comments}
 Spese tracciate: ${euro(k.expenses)}
-Prove archiviate: ${k.prove}
 
-E. ARCHIVIO PROVE
-${data.prove.map((e,i)=>`${i+1}. ${e.date} - ${e.type}: ${e.description} (${e.reference})`).join("\n")||"Nessuna prova archiviata."}
+E. CONCLUSIONE DIFENSIVA
+La sponsorizzazione è gestita come campagna pubblicitaria documentata, con KPI, reportistica e tracciabilità delle attività a supporto dell'inerenza economica dell'investimento.`);
+}
 
-F. CONCLUSIONE DIFENSIVA
-La sponsorizzazione è gestita come campagna pubblicitaria documentata, con KPI, reportistica, tracciabilità delle attività e conservazione delle prove a supporto dell'inerenza economica dell'investimento.`)}
-function exportJSON(){download("backup_sponsorizzazione.json",JSON.stringify(data,null,2))} function resetAll(){if(confirm("Vuoi cancellare tutti i dati salvati nel browser?")){localStorage.removeItem(KEY);location.reload()}}
-loadContract();render();
+function exportJSON(){
+  download("backup_sponsorizzazione.json",JSON.stringify(data,null,2));
+}
+
+function resetAll(){
+  if(confirm("Vuoi cancellare tutti i dati salvati nel browser?")){
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+}
+
+render();
 </script>
-</body></html>
+
+</body>
+</html>
