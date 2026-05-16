@@ -828,7 +828,7 @@
 
       <div class="receipt-panel">
         <h2 style="font-size:20px;margin-bottom:12px;">Ricevute caricate</h2>
-        <p class="muted">Carica qui le copie PDF delle ricevute/fatture. Dopo aver compilato titolo, data e importo, clicca “Conferma ricevuta” per creare il documento cliccabile. L'eliminazione dei documenti fiscali è protetta da password.</p>
+        <p class="muted">Carica qui le copie PDF delle ricevute/fatture. I PDF vengono salvati online su Firebase Storage e saranno visibili da tutti i dispositivi. L'eliminazione dei documenti fiscali è protetta da password.</p>
 
         <div class="grid grid-2">
           <label>Titolo spesa
@@ -875,9 +875,11 @@
 
 
 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDEhKc9acuRIDvGQp9pTlPfF9aJbzWbKvY",
@@ -890,15 +892,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 window.firebaseReady = true;
 window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
+window.firebaseStorage = storage;
 window.firebaseSetDoc = setDoc;
 window.firebaseGetDoc = getDoc;
 window.firebaseOnSnapshot = onSnapshot;
+window.firebaseStorageRef = ref;
+window.firebaseUploadBytes = uploadBytes;
+window.firebaseGetDownloadURL = getDownloadURL;
+window.firebaseDeleteObject = deleteObject;
 
 document.dispatchEvent(new Event("firebase-ready"));
 </script>
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -928,26 +937,60 @@ if(!data.receipts) data.receipts=[];
 
 
 
+
+function sanitizeForCloud(obj){
+  const clean = JSON.parse(JSON.stringify(obj || {}));
+  if(clean.receipts){
+    clean.receipts = clean.receipts.map(r => {
+      const copy = {...r};
+      delete copy.fileData; // evita superamento limite Firestore
+      return copy;
+    });
+  }
+  return clean;
+}
+
+function normalizeCloudData(cloudData){
+  return {
+    contract: cloudData.contract || data.contract,
+    posts: cloudData.posts || [],
+    gare: cloudData.gare || [],
+    spese: cloudData.spese || [],
+    receipts: cloudData.receipts || [],
+    notes: cloudData.notes || ""
+  };
+}
+
+function setSyncStatus(message){
+  const status=document.getElementById("syncStatus");
+  if(status) status.textContent=message;
+}
+
+function firebaseErrorMessage(err){
+  if(!err) return "Errore sconosciuto";
+  return (err.code ? err.code + " - " : "") + (err.message || String(err));
+}
+
+
+
 async function save(){
   localStorage.setItem(KEY,JSON.stringify(data));
 
   if(window.firebaseReady && window.firebaseDocRef && window.firebaseSetDoc){
     try{
-      await window.firebaseSetDoc(window.firebaseDocRef, data, { merge:false });
-      const status=document.getElementById("syncStatus");
-      if(status) status.textContent="Cloud sincronizzato";
+      await window.firebaseSetDoc(window.firebaseDocRef, sanitizeForCloud(data), { merge:false });
+      setSyncStatus("Cloud sincronizzato");
     }catch(err){
       console.error("Errore sincronizzazione Firebase:", err);
-      const status=document.getElementById("syncStatus");
-      if(status) status.textContent="Errore sync cloud";
+      setSyncStatus("Errore sync: " + firebaseErrorMessage(err));
     }
   }else{
-    const status=document.getElementById("syncStatus");
-    if(status) status.textContent="Cloud non ancora pronto";
+    setSyncStatus("Cloud non ancora pronto");
   }
 
   render();
 }
+
 
 
 
@@ -1214,7 +1257,8 @@ function renderGareSummary(){
 }
 
 
-function confirmReceipt(){
+
+async function confirmReceipt(){
   const titleEl=document.getElementById("receiptTitle");
   const dateEl=document.getElementById("receiptDate");
   const amountEl=document.getElementById("receiptAmount");
@@ -1250,24 +1294,42 @@ function confirmReceipt(){
     return;
   }
 
-  const reader=new FileReader();
-  reader.onload=function(e){
+  if(!window.firebaseStorage || !window.firebaseStorageRef || !window.firebaseUploadBytes || !window.firebaseGetDownloadURL){
+    alert("Firebase Storage non è pronto. Riprova tra qualche secondo.");
+    return;
+  }
+
+  try{
+    setSyncStatus("Caricamento ricevuta...");
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = "sponsorizzazione/ricevute/" + Date.now() + "_" + safeName;
+    const fileRef = window.firebaseStorageRef(window.firebaseStorage, storagePath);
+
+    await window.firebaseUploadBytes(fileRef, file);
+    const fileUrl = await window.firebaseGetDownloadURL(fileRef);
+
     data.receipts.push({
       id:crypto.randomUUID(),
       title:title,
       date:date,
       amount:amount,
       fileName:file.name,
-      fileData:e.target.result
+      fileUrl:fileUrl,
+      storagePath:storagePath
     });
 
     titleEl.value="";
     dateEl.value="";
     amountEl.value="";
     fileEl.value="";
-    save();
-  };
-  reader.readAsDataURL(file);
+
+    await save();
+    setSyncStatus("Ricevuta caricata e sincronizzata");
+  }catch(err){
+    console.error("Errore upload ricevuta:", err);
+    alert("Errore durante il caricamento della ricevuta: " + firebaseErrorMessage(err));
+    setSyncStatus("Errore upload: " + firebaseErrorMessage(err));
+  }
 }
 
 function renderReceipts(){
@@ -1281,7 +1343,7 @@ function renderReceipts(){
 
   box.innerHTML=data.receipts.map(r=>`
     <div class="receipt-link">
-      <a href="${r.fileData}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
+      <a href="${r.fileUrl || r.fileData || "#"}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
         ${esc(r.date)} - ${esc(r.title)} - ${euro(r.amount || 0)}
         <div class="receipt-small">${esc(r.fileName)}</div>
       </a>
@@ -1290,16 +1352,28 @@ function renderReceipts(){
   `).join("");
 }
 
-function deleteReceipt(id){
+
+async function deleteReceipt(id){
   const password=prompt("Inserisci la password autorizzativa per eliminare il documento fiscale:");
   if(password !== "admin123"){
     alert("Password errata. Eliminazione non autorizzata.");
     return;
   }
-  data.receipts=data.receipts.filter(r=>r.id!==id);
-  save();
-}
 
+  const receipt = data.receipts.find(r=>r.id===id);
+
+  try{
+    if(receipt && receipt.storagePath && window.firebaseStorage && window.firebaseStorageRef && window.firebaseDeleteObject){
+      const fileRef = window.firebaseStorageRef(window.firebaseStorage, receipt.storagePath);
+      await window.firebaseDeleteObject(fileRef);
+    }
+  }catch(err){
+    console.warn("Impossibile eliminare file Storage:", err);
+  }
+
+  data.receipts=data.receipts.filter(r=>r.id!==id);
+  await save();
+}
 
 function render(){
   const k=kpis();
@@ -1605,6 +1679,7 @@ function resetAll(){
 
 
 
+
 let firebaseUnsubscribe = null;
 let isApplyingCloudData = false;
 
@@ -1615,8 +1690,7 @@ async function initFirebaseSync(){
   }
 
   try{
-    const status=document.getElementById("syncStatus");
-    if(status) status.textContent="Connessione cloud...";
+    setSyncStatus("Connessione cloud...");
 
     const snapshot = await window.firebaseGetDoc(window.firebaseDocRef);
 
@@ -1624,19 +1698,12 @@ async function initFirebaseSync(){
       const cloudData = snapshot.data();
       if(cloudData && Object.keys(cloudData).length){
         isApplyingCloudData = true;
-        data = {
-          contract: cloudData.contract || data.contract,
-          posts: cloudData.posts || [],
-          gare: cloudData.gare || [],
-          spese: cloudData.spese || [],
-          receipts: cloudData.receipts || [],
-          notes: cloudData.notes || ""
-        };
+        data = normalizeCloudData(cloudData);
         localStorage.setItem(KEY, JSON.stringify(data));
         isApplyingCloudData = false;
       }
     }else{
-      await window.firebaseSetDoc(window.firebaseDocRef, data, { merge:false });
+      await window.firebaseSetDoc(window.firebaseDocRef, sanitizeForCloud(data), { merge:false });
     }
 
     if(firebaseUnsubscribe) firebaseUnsubscribe();
@@ -1645,17 +1712,10 @@ async function initFirebaseSync(){
       if(!snap.exists()) return;
 
       const cloudData = snap.data();
-      const normalized = {
-        contract: cloudData.contract || data.contract,
-        posts: cloudData.posts || [],
-        gare: cloudData.gare || [],
-        spese: cloudData.spese || [],
-        receipts: cloudData.receipts || [],
-        notes: cloudData.notes || ""
-      };
+      const normalized = normalizeCloudData(cloudData);
 
-      const current = JSON.stringify(data);
-      const incoming = JSON.stringify(normalized);
+      const current = JSON.stringify(sanitizeForCloud(data));
+      const incoming = JSON.stringify(sanitizeForCloud(normalized));
 
       if(current !== incoming){
         isApplyingCloudData = true;
@@ -1665,20 +1725,17 @@ async function initFirebaseSync(){
         render();
       }
 
-      const status=document.getElementById("syncStatus");
-      if(status) status.textContent="Cloud sincronizzato";
+      setSyncStatus("Cloud sincronizzato");
     }, (err)=>{
       console.error("Errore listener Firebase:", err);
-      const status=document.getElementById("syncStatus");
-      if(status) status.textContent="Errore sync cloud";
+      setSyncStatus("Errore sync: " + firebaseErrorMessage(err));
     });
 
     render();
 
   }catch(err){
     console.error("Errore Firebase:", err);
-    const status=document.getElementById("syncStatus");
-    if(status) status.textContent="Errore connessione cloud";
+    setSyncStatus("Errore connessione: " + firebaseErrorMessage(err));
   }
 }
 
