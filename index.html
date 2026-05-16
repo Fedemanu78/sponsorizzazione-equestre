@@ -492,6 +492,202 @@
       }
     }
 
+  
+    /* Ottimizzazione mobile avanzata */
+    @media(max-width:720px){
+      body{
+        background:#f8fafc;
+      }
+
+      header{
+        padding:22px 12px 16px;
+        position:relative;
+        border-bottom:1px solid #e2e8f0;
+      }
+
+      .wrap{
+        padding:12px;
+      }
+
+      h1{
+        font-size:27px;
+        line-height:1.12;
+        letter-spacing:-.03em;
+      }
+
+      h2{
+        font-size:21px !important;
+        margin-bottom:14px;
+      }
+
+      .hero-subtitle{
+        font-size:14px;
+        margin-top:10px;
+      }
+
+      .badge{
+        font-size:11px;
+        padding:6px 10px;
+      }
+
+      .grid-3,
+      .grid-4,
+      .grid-2,
+      .row{
+        grid-template-columns:1fr !important;
+      }
+
+      .kpi-centered{
+        max-width:100%;
+        gap:10px;
+      }
+
+      .card{
+        border-radius:20px;
+        padding:15px;
+        box-shadow:0 8px 22px rgba(15,23,42,.06);
+      }
+
+      .kpi-card{
+        min-height:auto;
+        padding:16px;
+      }
+
+      .kpi-card:after{
+        width:70px;
+        height:70px;
+        right:-24px;
+        top:-24px;
+      }
+
+      .num{
+        font-size:28px;
+      }
+
+      .tabs{
+        position:sticky;
+        top:0;
+        z-index:20;
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:8px;
+        padding:10px;
+        margin:14px 0;
+        border-radius:22px;
+        background:rgba(255,255,255,.96);
+        backdrop-filter:blur(16px);
+      }
+
+      .tab,
+      .tab.contract-tab{
+        width:100%;
+        min-width:0;
+        position:static;
+        margin-left:0;
+        padding:12px 10px;
+        font-size:13px;
+        border-radius:16px;
+        text-align:center;
+      }
+
+      .section{
+        animation:fadeInMobile .18s ease;
+      }
+
+      @keyframes fadeInMobile{
+        from{opacity:.65; transform:translateY(4px)}
+        to{opacity:1; transform:translateY(0)}
+      }
+
+      input,
+      textarea,
+      select{
+        font-size:16px;
+        padding:13px 12px;
+        border-radius:16px;
+      }
+
+      textarea{
+        min-height:100px;
+      }
+
+      label{
+        font-size:13px;
+      }
+
+      button{
+        width:100%;
+        padding:13px 14px;
+        border-radius:16px;
+        font-size:14px;
+      }
+
+      .actions{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:9px;
+      }
+
+      .receipt-panel{
+        padding:14px;
+        border-radius:20px;
+      }
+
+      .summary-card,
+      .receipt-link{
+        display:block;
+        padding:14px;
+        border-radius:18px;
+      }
+
+      .summary-title{
+        font-size:15px;
+      }
+
+      .summary-meta{
+        font-size:12.5px;
+      }
+
+      .summary-card button,
+      .receipt-link button{
+        margin-top:12px;
+        width:100%;
+      }
+
+      .pdf-frame{
+        min-height:420px;
+        border-radius:18px;
+      }
+
+      canvas{
+        height:240px;
+        border-radius:18px;
+      }
+
+      footer{
+        padding:16px 12px 24px;
+        font-size:12px;
+      }
+    }
+
+    @media(max-width:390px){
+      h1{
+        font-size:24px;
+      }
+
+      .tabs{
+        grid-template-columns:1fr;
+      }
+
+      .num{
+        font-size:25px;
+      }
+
+      .card{
+        padding:13px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1092,6 +1288,10 @@ function drawChart(){
   const c=document.getElementById("chart");
   if(!c)return;
 
+  const displayWidth = c.clientWidth || 900;
+  c.width = Math.max(320, Math.floor(displayWidth));
+  c.height = window.innerWidth <= 720 ? 260 : 300;
+
   const ctx=c.getContext("2d");
   ctx.clearRect(0,0,c.width,c.height);
 
@@ -1102,21 +1302,30 @@ function drawChart(){
     {label:"Spese",value:Math.min(k.expenses,24000),target:24000,color:"#ea580c"}
   ];
 
-  const w=160,gap=80,base=250;
-  ctx.font="16px Arial";
+  const isMobile = window.innerWidth <= 720;
+  const chartWidth = c.width;
+  const chartHeight = c.height;
+  const left = isMobile ? 28 : 80;
+  const top = 34;
+  const barAreaHeight = isMobile ? 160 : 220;
+  const base = top + barAreaHeight;
+  const gap = isMobile ? 18 : 80;
+  const w = Math.max(62, Math.min(isMobile ? 86 : 160, (chartWidth - left * 2 - gap * 2) / 3));
+
+  ctx.font=isMobile ? "13px Arial" : "16px Arial";
 
   vals.forEach((v,i)=>{
-    const x=80+i*(w+gap);
-    const h=Math.min(220,(pct(v.value,v.target)/100)*220);
+    const x=left+i*(w+gap);
+    const h=Math.min(barAreaHeight,(pct(v.value,v.target)/100)*barAreaHeight);
 
     ctx.fillStyle="#e2e8f0";
-    ctx.fillRect(x,30,w,220);
+    ctx.fillRect(x,top,w,barAreaHeight);
 
     ctx.fillStyle=v.color;
     ctx.fillRect(x,base-h,w,h);
 
     ctx.fillStyle="#0f172a";
-    ctx.fillText(v.label,x,280);
+    ctx.fillText(v.label,x,base + (isMobile ? 22 : 30));
 
     if(v.label==="Spese"){
       ctx.fillText(euro(v.value),x,24);
@@ -1347,6 +1556,7 @@ function resetAll(){
 }
 
 render();
+window.addEventListener('resize', drawChart);
 </script>
 
 </body>
