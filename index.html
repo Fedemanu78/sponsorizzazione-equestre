@@ -871,7 +871,31 @@
 
 </main>
 
-<footer>Salvataggio automatico nel browser tramite localStorage.</footer>
+<footer>Sincronizzazione cloud automatica attiva tramite Firebase.</footer>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEhKc9acuRIDvGQp9pTlPfF9aJbzWbKvY",
+  authDomain: "sponsorizzazione-equestre.firebaseapp.com",
+  projectId: "sponsorizzazione-equestre",
+  storageBucket: "sponsorizzazione-equestre.firebasestorage.app",
+  messagingSenderId: "129913368934",
+  appId: "1:129913368934:web:f96d94afe7cc54ece798a7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.firebaseDB = db;
+window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
+
+window.firebaseReady = true;
+document.dispatchEvent(new Event("firebase-ready"));
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -898,10 +922,21 @@ let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
 
 if(!data.receipts) data.receipts=[];
 
-function save(){
+
+async function save(){
   localStorage.setItem(KEY,JSON.stringify(data));
+
+  if(window.firebaseReady && window.firebaseDocRef){
+    try{
+      await setDoc(window.firebaseDocRef, data);
+    }catch(err){
+      console.error("Errore sincronizzazione Firebase:", err);
+    }
+  }
+
   render();
 }
+
 
 function euro(n){
   return "€ "+Number(n||0).toLocaleString("it-IT");
@@ -1554,6 +1589,49 @@ function resetAll(){
     location.reload();
   }
 }
+
+
+async function initFirebaseSync(){
+  if(!window.firebaseReady || !window.firebaseDocRef) return;
+
+  try{
+    const snapshot = await getDoc(window.firebaseDocRef);
+
+    if(snapshot.exists()){
+      const cloudData = snapshot.data();
+
+      if(cloudData){
+        data = cloudData;
+        localStorage.setItem(KEY, JSON.stringify(data));
+      }
+    }else{
+      await setDoc(window.firebaseDocRef, data);
+    }
+
+    onSnapshot(window.firebaseDocRef, (snap)=>{
+      if(snap.exists()){
+        const cloudData = snap.data();
+
+        const current = JSON.stringify(data);
+        const incoming = JSON.stringify(cloudData);
+
+        if(current !== incoming){
+          data = cloudData;
+          localStorage.setItem(KEY, JSON.stringify(data));
+          render();
+        }
+      }
+    });
+
+    render();
+
+  }catch(err){
+    console.error("Errore Firebase:", err);
+  }
+}
+
+document.addEventListener("firebase-ready", initFirebaseSync);
+
 
 render();
 window.addEventListener('resize', drawChart);
