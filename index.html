@@ -828,7 +828,7 @@
 
       <div class="receipt-panel">
         <h2 style="font-size:20px;margin-bottom:12px;">Ricevute caricate</h2>
-        <p class="muted">Carica qui le copie PDF delle ricevute/fatture. I PDF vengono salvati online su Firebase Storage e saranno visibili da tutti i dispositivi. L'eliminazione dei documenti fiscali è protetta da password.</p>
+        <p class="muted">I dati dell'app sono sincronizzati online tra dispositivi. Le ricevute PDF restano disponibili nel dispositivo che le ha caricate. L'eliminazione dei documenti fiscali è protetta da password.</p>
 
         <div class="grid grid-2">
           <label>Titolo spesa
@@ -871,7 +871,8 @@
 
 </main>
 
-<footer><span id="syncStatus">Connessione cloud...</span></footer>
+<footer><span id="syncStatus">Cloud sincronizzato</span></footer>
+
 
 
 
@@ -879,7 +880,6 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDEhKc9acuRIDvGQp9pTlPfF9aJbzWbKvY",
@@ -892,21 +892,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 window.firebaseReady = true;
 window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
-window.firebaseStorage = storage;
 window.firebaseSetDoc = setDoc;
 window.firebaseGetDoc = getDoc;
 window.firebaseOnSnapshot = onSnapshot;
-window.firebaseStorageRef = ref;
-window.firebaseUploadBytes = uploadBytes;
-window.firebaseGetDownloadURL = getDownloadURL;
-window.firebaseDeleteObject = deleteObject;
 
 document.dispatchEvent(new Event("firebase-ready"));
 </script>
+
 
 
 
@@ -938,15 +933,23 @@ if(!data.receipts) data.receipts=[];
 
 
 
+
 function sanitizeForCloud(obj){
   const clean = JSON.parse(JSON.stringify(obj || {}));
+
   if(clean.receipts){
     clean.receipts = clean.receipts.map(r => {
       const copy = {...r};
-      delete copy.fileData; // evita superamento limite Firestore
+
+      // rimuove dati pesanti o riferimenti storage
+      delete copy.fileData;
+      delete copy.null;
+      delete copy.null;
+
       return copy;
     });
   }
+
   return clean;
 }
 
@@ -970,6 +973,7 @@ function firebaseErrorMessage(err){
   if(!err) return "Errore sconosciuto";
   return (err.code ? err.code + " - " : "") + (err.message || String(err));
 }
+
 
 
 
@@ -1294,7 +1298,7 @@ async function confirmReceipt(){
     return;
   }
 
-  if(!window.firebaseStorage || !window.firebaseStorageRef || !window.firebaseUploadBytes || !window.firebaseGetDownloadURL){
+  if(!null || !nullRef || !null || !null){
     alert("Firebase Storage non è pronto. Riprova tra qualche secondo.");
     return;
   }
@@ -1302,11 +1306,11 @@ async function confirmReceipt(){
   try{
     setSyncStatus("Caricamento ricevuta...");
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const storagePath = "sponsorizzazione/ricevute/" + Date.now() + "_" + safeName;
-    const fileRef = window.firebaseStorageRef(window.firebaseStorage, storagePath);
+    const null = "sponsorizzazione/ricevute/" + Date.now() + "_" + safeName;
+    const fileRef = nullRef(null, null);
 
-    await window.firebaseUploadBytes(fileRef, file);
-    const fileUrl = await window.firebaseGetDownloadURL(fileRef);
+    await null(fileRef, file);
+    const null = await null(fileRef);
 
     data.receipts.push({
       id:crypto.randomUUID(),
@@ -1314,8 +1318,8 @@ async function confirmReceipt(){
       date:date,
       amount:amount,
       fileName:file.name,
-      fileUrl:fileUrl,
-      storagePath:storagePath
+      null:null,
+      null:null
     });
 
     titleEl.value="";
@@ -1343,7 +1347,7 @@ function renderReceipts(){
 
   box.innerHTML=data.receipts.map(r=>`
     <div class="receipt-link">
-      <a href="${r.fileUrl || r.fileData || "#"}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
+      <a href="${r.fileData || "#"}" target="_blank" style="color:#1d4ed8;text-decoration:none;flex:1;">
         ${esc(r.date)} - ${esc(r.title)} - ${euro(r.amount || 0)}
         <div class="receipt-small">${esc(r.fileName)}</div>
       </a>
@@ -1353,29 +1357,21 @@ function renderReceipts(){
 }
 
 
+
 async function deleteReceipt(id){
   const password=prompt("Inserisci la password autorizzativa per eliminare il documento fiscale:");
+
   if(password !== "admin123"){
     alert("Password errata. Eliminazione non autorizzata.");
     return;
-  }
-
-  const receipt = data.receipts.find(r=>r.id===id);
-
-  try{
-    if(receipt && receipt.storagePath && window.firebaseStorage && window.firebaseStorageRef && window.firebaseDeleteObject){
-      const fileRef = window.firebaseStorageRef(window.firebaseStorage, receipt.storagePath);
-      await window.firebaseDeleteObject(fileRef);
-    }
-  }catch(err){
-    console.warn("Impossibile eliminare file Storage:", err);
   }
 
   data.receipts=data.receipts.filter(r=>r.id!==id);
   await save();
 }
 
-function render(){
+function render(
+){
   const k=kpis();
 
   document.getElementById("kpiPosts").textContent=`${k.posts}/96`;
@@ -1690,7 +1686,7 @@ async function initFirebaseSync(){
   }
 
   try{
-    setSyncStatus("Connessione cloud...");
+    setSyncStatus("Cloud sincronizzato");
 
     const snapshot = await window.firebaseGetDoc(window.firebaseDocRef);
 
