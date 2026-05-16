@@ -435,6 +435,43 @@
     .kpi-card .num{
       margin-bottom:4px;
     }
+  
+    .summary-card{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border:1px solid #bfdbfe;
+      border-radius:18px;
+      background:#ffffff;
+      color:#0f172a;
+      box-shadow:0 6px 16px rgba(37,99,235,.08);
+    }
+
+    .summary-title{
+      color:#1d4ed8;
+      font-weight:900;
+      margin-bottom:4px;
+    }
+
+    .summary-meta{
+      color:#64748b;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.45;
+    }
+
+    .summary-link{
+      color:#2563eb;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    .summary-link:hover{
+      text-decoration:underline;
+    }
+
   </style>
 </head>
 <body>
@@ -509,16 +546,66 @@
   <section id="social" class="section">
     <div class="card">
       <h2>Registro Social</h2>
-      <div class="actions"><button onclick="addPost()">+ Aggiungi post</button></div>
-      <div id="postList" class="list"></div>
+      <div class="receipt-panel">
+        <p class="muted">Inserisci i dati del contenuto social pubblicato e clicca “Conferma post” per creare l’elenco delle voci registrate.</p>
+        <div class="grid grid-2">
+          <label>Data post
+            <input id="postDate" type="date">
+          </label>
+          <label>Piattaforma
+            <input id="postPlatform" placeholder="Es. Instagram / Facebook / TikTok">
+          </label>
+          <label>Link post
+            <input id="postLink" placeholder="https://...">
+          </label>
+          <label>Visualizzazioni
+            <input id="postViews" type="number" placeholder="Es. 1200">
+          </label>
+          <label>Like
+            <input id="postLikes" type="number" placeholder="Es. 85">
+          </label>
+          <label>Commenti
+            <input id="postComments" type="number" placeholder="Es. 7">
+          </label>
+          <label style="grid-column:1/-1;">Descrizione contenuto
+            <textarea id="postDescription" placeholder="Descrivi brevemente il contenuto pubblicato"></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button onclick="confirmPost()">Conferma post</button>
+        </div>
+      </div>
+      <div id="postList" class="receipt-list"></div>
     </div>
   </section>
 
   <section id="gare" class="section">
     <div class="card">
       <h2>Registro Gare</h2>
-      <div class="actions"><button onclick="addGara()">+ Aggiungi gara</button></div>
-      <div id="gareList" class="list"></div>
+      <div class="receipt-panel">
+        <p class="muted">Inserisci i dati della gara/evento e clicca “Conferma gara” per creare l’elenco delle voci registrate.</p>
+        <div class="grid grid-2">
+          <label>Data gara
+            <input id="garaDate" type="date">
+          </label>
+          <label>Nome gara/evento
+            <input id="garaName" placeholder="Es. Concorso FISE ...">
+          </label>
+          <label>Luogo
+            <input id="garaLocation" placeholder="Es. Centro ippico / città">
+          </label>
+          <label>Risultato
+            <input id="garaResult" placeholder="Es. Classifica / partecipazione">
+          </label>
+          <label style="grid-column:1/-1;">Note
+            <textarea id="garaNotes" placeholder="Note sull’evento, presenza sponsor, materiale pubblicitario, ecc."></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button onclick="confirmGara()">Conferma gara</button>
+        </div>
+      </div>
+      <div id="gareList" class="receipt-list"></div>
     </div>
   </section>
 
@@ -722,6 +809,133 @@ function kpis(){
 }
 
 
+
+function confirmPost(){
+  const date=document.getElementById("postDate").value;
+  const platform=(document.getElementById("postPlatform").value||"").trim();
+  const link=(document.getElementById("postLink").value||"").trim();
+  const views=Number(document.getElementById("postViews").value||0);
+  const likes=Number(document.getElementById("postLikes").value||0);
+  const comments=Number(document.getElementById("postComments").value||0);
+  const description=(document.getElementById("postDescription").value||"").trim();
+
+  if(!date){
+    alert("Inserisci la data del post.");
+    return;
+  }
+
+  if(!platform){
+    alert("Inserisci la piattaforma.");
+    return;
+  }
+
+  if(!description){
+    alert("Inserisci una descrizione del contenuto.");
+    return;
+  }
+
+  data.posts.push({
+    id:crypto.randomUUID(),
+    date:date,
+    platform:platform,
+    description:description,
+    logo:"Sì",
+    link:link,
+    views:views,
+    likes:likes,
+    comments:comments
+  });
+
+  document.getElementById("postDate").value="";
+  document.getElementById("postPlatform").value="";
+  document.getElementById("postLink").value="";
+  document.getElementById("postViews").value="";
+  document.getElementById("postLikes").value="";
+  document.getElementById("postComments").value="";
+  document.getElementById("postDescription").value="";
+  save();
+}
+
+function confirmGara(){
+  const date=document.getElementById("garaDate").value;
+  const name=(document.getElementById("garaName").value||"").trim();
+  const location=(document.getElementById("garaLocation").value||"").trim();
+  const result=(document.getElementById("garaResult").value||"").trim();
+  const notes=(document.getElementById("garaNotes").value||"").trim();
+
+  if(!date){
+    alert("Inserisci la data della gara.");
+    return;
+  }
+
+  if(!name){
+    alert("Inserisci il nome della gara/evento.");
+    return;
+  }
+
+  data.gare.push({
+    id:crypto.randomUUID(),
+    date:date,
+    name:name,
+    location:location,
+    logo:"Sì",
+    result:result,
+    notes:notes
+  });
+
+  document.getElementById("garaDate").value="";
+  document.getElementById("garaName").value="";
+  document.getElementById("garaLocation").value="";
+  document.getElementById("garaResult").value="";
+  document.getElementById("garaNotes").value="";
+  save();
+}
+
+function renderPostsSummary(){
+  const box=document.getElementById("postList");
+  if(!box) return;
+
+  if(!data.posts.length){
+    box.innerHTML='<div class="muted">Nessun post registrato.</div>';
+    return;
+  }
+
+  box.innerHTML=data.posts.map(p=>`
+    <div class="summary-card">
+      <div style="flex:1;">
+        <div class="summary-title">${esc(p.date)} - ${esc(p.platform)}</div>
+        <div class="summary-meta">${esc(p.description)}</div>
+        <div class="summary-meta">Visualizzazioni: ${Number(p.views||0)} · Like: ${Number(p.likes||0)} · Commenti: ${Number(p.comments||0)}</div>
+        ${p.link ? `<a class="summary-link" href="${esc(p.link)}" target="_blank">Apri post</a>` : ""}
+      </div>
+      <button class="danger" onclick="delItem('posts','${p.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
+    </div>
+  `).join("");
+}
+
+function renderGareSummary(){
+  const box=document.getElementById("gareList");
+  if(!box) return;
+
+  if(!data.gare.length){
+    box.innerHTML='<div class="muted">Nessuna gara registrata.</div>';
+    return;
+  }
+
+  box.innerHTML=data.gare.map(g=>`
+    <div class="summary-card">
+      <div style="flex:1;">
+        <div class="summary-title">${esc(g.date)} - ${esc(g.name)}</div>
+        <div class="summary-meta">Luogo: ${esc(g.location || "Non indicato")}</div>
+        <div class="summary-meta">Risultato: ${esc(g.result || "Non indicato")}</div>
+        ${g.notes ? `<div class="summary-meta">Note: ${esc(g.notes)}</div>` : ""}
+      </div>
+      <button class="danger" onclick="delItem('gare','${g.id}')" style="padding:8px 10px;border-radius:12px;">Elimina</button>
+    </div>
+  `).join("");
+}
+
+
 function confirmReceipt(){
   const titleEl=document.getElementById("receiptTitle");
   const dateEl=document.getElementById("receiptDate");
@@ -821,25 +1035,8 @@ function render(){
   if(barPosts) barPosts.style.width=pct(k.posts,96)+"%";
   if(barGare) barGare.style.width=pct(k.gare,24)+"%";
 
-  renderList("posts","postList",[
-    {key:"date",label:"Data",inputType:"date"},
-    {key:"platform",label:"Piattaforma"},
-    {key:"logo",label:"Logo visibile"},
-    {key:"link",label:"Link"},
-    {key:"views",label:"Visualizzazioni",inputType:"number"},
-    {key:"likes",label:"Like",inputType:"number"},
-    {key:"comments",label:"Commenti",inputType:"number"},
-    {key:"description",label:"Descrizione",area:true}
-  ]);
-
-  renderList("gare","gareList",[
-    {key:"date",label:"Data",inputType:"date"},
-    {key:"name",label:"Nome gara"},
-    {key:"location",label:"Luogo"},
-    {key:"logo",label:"Logo visibile"},
-    {key:"result",label:"Risultato"},
-    {key:"notes",label:"Note"}
-  ]);
+  renderPostsSummary();
+  renderGareSummary();
 
   renderList("spese","speseList",[
     {key:"date",label:"Data",inputType:"date"},
@@ -936,7 +1133,7 @@ Ricevute caricate: ${data.receipts ? data.receipts.length : 0}
 ${data.posts.map((p,i)=>`${i+1}. ${p.date} - ${p.platform} - ${p.description} - Logo: ${p.logo} - Link: ${p.link}`).join("\n")||"Nessun post registrato."}
 
 3. GARE
-${data.gare.map((g,i)=>`${i+1}. ${g.date} - ${g.name} - ${g.location} - Logo: ${g.logo} - Risultato: ${g.result}`).join("\n")||"Nessuna gara registrata."}
+${data.gare.map((g,i)=>`${i+1}. ${g.date} - ${g.name} - ${g.location} - Risultato: ${g.result}`).join("\n")||"Nessuna gara registrata."}
 
 4. REGISTRO SPESE
 ${data.spese.map((e,i)=>`${i+1}. ${e.date} - ${e.category} - ${euro(e.amount)} - Documento: ${e.document}`).join("\n")||"Nessuna spesa registrata."}
