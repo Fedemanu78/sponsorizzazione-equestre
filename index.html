@@ -663,15 +663,13 @@
 
   <section id="report" class="section">
     <div class="card">
-      <h2>Generazione documenti</h2>
-      <p class="muted">Genera file TXT strutturati, copiabili in Word o allegabili al dossier.</p>
-      <div class="actions">
-        <button onclick="generateReport()">Genera report trimestrale</button>
-        <button class="secondary" onclick="generateDossier()">Genera dossier difensivo</button>
-        <button class="secondary" onclick="exportJSON()">Esporta backup JSON</button>
-        <button class="danger" onclick="resetAll()">Reset dati</button>
+      <h2>Report</h2>
+      <p class="muted" style="text-align:center;">
+        Crea un report PDF riepilogativo contenente post pubblicati, gare effettuate e spese registrate.
+      </p>
+      <div class="actions" style="justify-content:center;">
+        <button onclick="createPdfReport()">Crea Report</button>
       </div>
-      <label>Note interne<textarea id="notes" onchange="saveNotes()"></textarea></label>
     </div>
   </section>
 
@@ -679,6 +677,7 @@
 
 <footer>Salvataggio automatico nel browser tramite localStorage.</footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const KEY="sponsorizzazione_equestre_html_v2";
 
@@ -1123,6 +1122,119 @@ function downloadContract(){
   a.download="contratto.pdf";
   a.click();
 }
+
+
+function createPdfReport(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  const margin = 14;
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const usableWidth = pageWidth - margin * 2;
+  let y = 16;
+
+  function addLine(text, size=10, bold=false){
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    const lines = doc.splitTextToSize(String(text || ""), usableWidth);
+    lines.forEach(line=>{
+      if(y > 282){
+        doc.addPage();
+        y = 16;
+      }
+      doc.text(line, margin, y);
+      y += size >= 14 ? 8 : 6;
+    });
+  }
+
+  function sectionTitle(title){
+    if(y > 270){
+      doc.addPage();
+      y = 16;
+    }
+    y += 4;
+    doc.setFillColor(239, 246, 255);
+    doc.roundedRect(margin, y - 6, usableWidth, 10, 2, 2, "F");
+    doc.setTextColor(37, 99, 235);
+    addLine(title, 13, true);
+    doc.setTextColor(15, 23, 42);
+    y += 2;
+  }
+
+  function empty(text){
+    addLine(text, 10, false);
+  }
+
+  const now = new Date().toLocaleDateString("it-IT");
+
+  doc.setTextColor(15, 23, 42);
+  addLine("REPORT SPONSORIZZAZIONE EQUESTRE", 17, true);
+  addLine("Generato il: " + now, 10, false);
+  y += 3;
+
+  const k = kpis();
+  sectionTitle("Sintesi");
+  addLine("Post pubblicati: " + k.posts + "/96");
+  addLine("Gare registrate: " + k.gare + "/24");
+  addLine("Registro spese: " + euro(k.expenses));
+  addLine("Ricevute caricate: " + ((data.receipts && data.receipts.length) ? data.receipts.length : 0));
+
+  sectionTitle("Post pubblicati");
+  if(!data.posts.length){
+    empty("Nessun post registrato.");
+  } else {
+    data.posts.forEach((p, i)=>{
+      addLine((i+1) + ". " + (p.date || "Data non indicata") + " - " + (p.platform || "Piattaforma non indicata"), 10, true);
+      addLine("Descrizione: " + (p.description || "Non indicata"));
+      addLine("Visualizzazioni: " + Number(p.views || 0) + " | Like: " + Number(p.likes || 0) + " | Commenti: " + Number(p.comments || 0));
+      if(p.link) addLine("Link: " + p.link);
+      y += 2;
+    });
+  }
+
+  sectionTitle("Gare effettuate");
+  if(!data.gare.length){
+    empty("Nessuna gara registrata.");
+  } else {
+    data.gare.forEach((g, i)=>{
+      addLine((i+1) + ". " + (g.date || "Data non indicata") + " - " + (g.name || "Nome gara non indicato"), 10, true);
+      addLine("Luogo: " + (g.location || "Non indicato"));
+      addLine("Risultato: " + (g.result || "Non indicato"));
+      if(g.notes) addLine("Note: " + g.notes);
+      y += 2;
+    });
+  }
+
+  sectionTitle("Spese registrate");
+  const hasSpese = data.spese.length || (data.receipts && data.receipts.length);
+  if(!hasSpese){
+    empty("Nessuna spesa registrata.");
+  } else {
+    if(data.spese.length){
+      addLine("Spese inserite manualmente", 11, true);
+      data.spese.forEach((e, i)=>{
+        addLine((i+1) + ". " + (e.date || "Data non indicata") + " - " + (e.category || "Categoria non indicata") + " - " + euro(e.amount || 0), 10, true);
+        if(e.document) addLine("Documento: " + e.document);
+        if(e.notes) addLine("Note: " + e.notes);
+        y += 2;
+      });
+    }
+
+    if(data.receipts && data.receipts.length){
+      y += 3;
+      addLine("Ricevute/fatture caricate", 11, true);
+      data.receipts.forEach((r, i)=>{
+        addLine((i+1) + ". " + (r.date || "Data non indicata") + " - " + (r.title || "Titolo non indicato") + " - " + euro(r.amount || 0), 10, true);
+        addLine("File: " + (r.fileName || "Non indicato"));
+        y += 2;
+      });
+    }
+  }
+
+  doc.save("Report_Sponsorizzazione_Equestre.pdf");
+}
+
 
 function generateReport(){
   const c=data.contract,k=kpis();
