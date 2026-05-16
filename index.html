@@ -871,7 +871,8 @@
 
 </main>
 
-<footer>Sincronizzazione cloud automatica attiva tramite Firebase.</footer>
+<footer><span id="syncStatus">Connessione cloud...</span></footer>
+
 
 
 <script type="module">
@@ -890,12 +891,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.firebaseDB = db;
-window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
-
 window.firebaseReady = true;
+window.firebaseDocRef = doc(db, "sponsorizzazione", "dashboard");
+window.firebaseSetDoc = setDoc;
+window.firebaseGetDoc = getDoc;
+window.firebaseOnSnapshot = onSnapshot;
+
 document.dispatchEvent(new Event("firebase-ready"));
 </script>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -923,19 +927,28 @@ let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
 if(!data.receipts) data.receipts=[];
 
 
+
 async function save(){
   localStorage.setItem(KEY,JSON.stringify(data));
 
-  if(window.firebaseReady && window.firebaseDocRef){
+  if(window.firebaseReady && window.firebaseDocRef && window.firebaseSetDoc){
     try{
-      await setDoc(window.firebaseDocRef, data);
+      await window.firebaseSetDoc(window.firebaseDocRef, data, { merge:false });
+      const status=document.getElementById("syncStatus");
+      if(status) status.textContent="Cloud sincronizzato";
     }catch(err){
       console.error("Errore sincronizzazione Firebase:", err);
+      const status=document.getElementById("syncStatus");
+      if(status) status.textContent="Errore sync cloud";
     }
+  }else{
+    const status=document.getElementById("syncStatus");
+    if(status) status.textContent="Cloud non ancora pronto";
   }
 
   render();
 }
+
 
 
 function euro(n){
@@ -1591,46 +1604,86 @@ function resetAll(){
 }
 
 
+
+let firebaseUnsubscribe = null;
+let isApplyingCloudData = false;
+
 async function initFirebaseSync(){
-  if(!window.firebaseReady || !window.firebaseDocRef) return;
+  if(!window.firebaseReady || !window.firebaseDocRef || !window.firebaseGetDoc || !window.firebaseSetDoc || !window.firebaseOnSnapshot){
+    console.warn("Firebase non pronto.");
+    return;
+  }
 
   try{
-    const snapshot = await getDoc(window.firebaseDocRef);
+    const status=document.getElementById("syncStatus");
+    if(status) status.textContent="Connessione cloud...";
+
+    const snapshot = await window.firebaseGetDoc(window.firebaseDocRef);
 
     if(snapshot.exists()){
       const cloudData = snapshot.data();
-
-      if(cloudData){
-        data = cloudData;
+      if(cloudData && Object.keys(cloudData).length){
+        isApplyingCloudData = true;
+        data = {
+          contract: cloudData.contract || data.contract,
+          posts: cloudData.posts || [],
+          gare: cloudData.gare || [],
+          spese: cloudData.spese || [],
+          receipts: cloudData.receipts || [],
+          notes: cloudData.notes || ""
+        };
         localStorage.setItem(KEY, JSON.stringify(data));
+        isApplyingCloudData = false;
       }
     }else{
-      await setDoc(window.firebaseDocRef, data);
+      await window.firebaseSetDoc(window.firebaseDocRef, data, { merge:false });
     }
 
-    onSnapshot(window.firebaseDocRef, (snap)=>{
-      if(snap.exists()){
-        const cloudData = snap.data();
+    if(firebaseUnsubscribe) firebaseUnsubscribe();
 
-        const current = JSON.stringify(data);
-        const incoming = JSON.stringify(cloudData);
+    firebaseUnsubscribe = window.firebaseOnSnapshot(window.firebaseDocRef, (snap)=>{
+      if(!snap.exists()) return;
 
-        if(current !== incoming){
-          data = cloudData;
-          localStorage.setItem(KEY, JSON.stringify(data));
-          render();
-        }
+      const cloudData = snap.data();
+      const normalized = {
+        contract: cloudData.contract || data.contract,
+        posts: cloudData.posts || [],
+        gare: cloudData.gare || [],
+        spese: cloudData.spese || [],
+        receipts: cloudData.receipts || [],
+        notes: cloudData.notes || ""
+      };
+
+      const current = JSON.stringify(data);
+      const incoming = JSON.stringify(normalized);
+
+      if(current !== incoming){
+        isApplyingCloudData = true;
+        data = normalized;
+        localStorage.setItem(KEY, JSON.stringify(data));
+        isApplyingCloudData = false;
+        render();
       }
+
+      const status=document.getElementById("syncStatus");
+      if(status) status.textContent="Cloud sincronizzato";
+    }, (err)=>{
+      console.error("Errore listener Firebase:", err);
+      const status=document.getElementById("syncStatus");
+      if(status) status.textContent="Errore sync cloud";
     });
 
     render();
 
   }catch(err){
     console.error("Errore Firebase:", err);
+    const status=document.getElementById("syncStatus");
+    if(status) status.textContent="Errore connessione cloud";
   }
 }
 
 document.addEventListener("firebase-ready", initFirebaseSync);
+if(window.firebaseReady) initFirebaseSync();
 
 
 render();
